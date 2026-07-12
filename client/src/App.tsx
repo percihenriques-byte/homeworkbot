@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Chat from "./pages/Chat";
 import StudyTools from "./pages/StudyTools";
@@ -15,6 +16,7 @@ import Memories from "./pages/Memories";
 import { useAuth } from "./_core/hooks/useAuth";
 
 // Rotas estaveis (evita remounting em cada re-render do Router).
+const DashboardRoute = () => (<DashboardLayout><Dashboard /></DashboardLayout>);
 const TasksRoute = () => (<DashboardLayout><Tasks /></DashboardLayout>);
 const ChatRoute = () => (<DashboardLayout><Chat /></DashboardLayout>);
 const StudyToolsRoute = () => (<DashboardLayout><StudyTools /></DashboardLayout>);
@@ -23,6 +25,7 @@ const MemoriesRoute = () => (<DashboardLayout><Memories /></DashboardLayout>);
 const SettingsRoute = () => (<DashboardLayout><Settings /></DashboardLayout>);
 
 const PROTECTED_ROUTES: Array<{ path: string; component: React.ComponentType }> = [
+  { path: "/painel", component: DashboardRoute },
   { path: "/tarefas", component: TasksRoute },
   { path: "/chat", component: ChatRoute },
   { path: "/ferramentas", component: StudyToolsRoute },

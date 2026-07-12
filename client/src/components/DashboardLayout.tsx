@@ -28,6 +28,7 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
+  { icon: LayoutDashboard, label: "Painel", path: "/painel" },
   { icon: BookOpen, label: "Minhas Tarefas", path: "/tarefas" },
   { icon: MessageSquare, label: "Chat com IA", path: "/chat" },
   { icon: Zap, label: "Ferramentas de Estudo", path: "/ferramentas" },

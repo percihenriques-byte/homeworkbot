@@ -13,7 +13,7 @@ export default function Home() {
   // Redireciona no efeito, NUNCA durante o render (anti-pattern React).
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate("/tarefas");
+      navigate("/painel");
     }
   }, [isAuthenticated, loading, navigate]);
 
