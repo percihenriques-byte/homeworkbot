@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
@@ -29,8 +29,9 @@ export default function Tasks() {
   const deleteTaskMutation = trpc.tasks.delete.useMutation();
   const toddleSyncMutation = trpc.toddle.sync.useMutation();
   const completeTaskMutation = trpc.chat.completeTask.useMutation();
+  const sendCompletedEmailMutation = trpc.email.sendCompletedTask.useMutation();
   const [toddleConnected, setToddleConnected] = useState(false);
-  const [aiResult, setAiResult] = useState<{ taskTitle: string; content: string } | null>(null);
+  const [aiResult, setAiResult] = useState<{ taskId: number; taskTitle: string; content: string } | null>(null);
 
   const handleToddleSync = async () => {
     try {
@@ -119,10 +120,20 @@ export default function Tasks() {
   const handleCompleteWithAI = async (task: any) => {
     try {
       const res = await completeTaskMutation.mutateAsync({ taskId: task.id });
-      setAiResult({ taskTitle: task.title, content: res.content });
+      setAiResult({ taskId: task.id, taskTitle: task.title, content: res.content });
       await refetch();
     } catch (error: any) {
       toast.error(error?.message || "Erro ao gerar conteúdo com IA");
+    }
+  };
+
+  const handleSendCompletedEmail = async () => {
+    if (!aiResult) return;
+    try {
+      await sendCompletedEmailMutation.mutateAsync({ taskId: aiResult.taskId });
+      toast.success("Email enviado! Verifique sua caixa de entrada.");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao enviar email");
     }
   };
 
@@ -553,6 +564,15 @@ export default function Tasks() {
               >
                 <Copy className="w-4 h-4 mr-2" />
                 Copiar texto
+              </Button>
+              <Button
+                variant="outline"
+                className="min-h-11"
+                onClick={handleSendCompletedEmail}
+                disabled={sendCompletedEmailMutation.isPending}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                {sendCompletedEmailMutation.isPending ? "Enviando..." : "Enviar por email"}
               </Button>
               <Button className="min-h-11" onClick={() => setAiResult(null)}>
                 Fechar

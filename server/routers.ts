@@ -634,6 +634,45 @@ export const appRouter = router({
         const integrationSettings = await db.getIntegrationSettings(ctx.user.id);
         return await sendTestEmail(input.toEmail, integrationSettings?.gmailUser || undefined, integrationSettings?.gmailAppPassword || undefined);
       }),
+
+    // Envia o conteúdo gerado pela IA (completedContent da tarefa) para
+    // o email do usuário. Usado depois do "Completar com IA" pra ele
+    // receber o texto no email e imprimir/entregar.
+    sendCompletedTask: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const task = await db.getTaskById(input.taskId, ctx.user.id);
+        if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
+        if (!task.completedContent) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Esta tarefa não tem conteúdo gerado. Use 'Completar com IA' primeiro.",
+          });
+        }
+
+        const settings = await db.getIntegrationSettings(ctx.user.id);
+        if (!settings?.emailSenderEmail) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Configure seu email em Configurações antes de enviar.",
+          });
+        }
+        if (!settings.gmailUser || !settings.gmailAppPassword) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Configure seu Gmail (email + senha de app) em Configurações.",
+          });
+        }
+
+        const { sendCompletedTaskEmail } = await import("./email");
+        return await sendCompletedTaskEmail(
+          settings.emailSenderEmail,
+          task.title,
+          task.completedContent,
+          settings.gmailUser,
+          settings.gmailAppPassword
+        );
+      }),
   }),
 });
 
