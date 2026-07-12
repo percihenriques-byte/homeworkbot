@@ -16,8 +16,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -27,7 +28,9 @@ export default function Tasks() {
   const updateTaskMutation = trpc.tasks.update.useMutation();
   const deleteTaskMutation = trpc.tasks.delete.useMutation();
   const toddleSyncMutation = trpc.toddle.sync.useMutation();
+  const completeTaskMutation = trpc.chat.completeTask.useMutation();
   const [toddleConnected, setToddleConnected] = useState(false);
+  const [aiResult, setAiResult] = useState<{ taskTitle: string; content: string } | null>(null);
 
   const handleToddleSync = async () => {
     try {
@@ -110,6 +113,16 @@ export default function Tasks() {
       refetch();
     } catch (error) {
       toast.error("Erro ao deletar tarefa");
+    }
+  };
+
+  const handleCompleteWithAI = async (task: any) => {
+    try {
+      const res = await completeTaskMutation.mutateAsync({ taskId: task.id });
+      setAiResult({ taskTitle: task.title, content: res.content });
+      await refetch();
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao gerar conteúdo com IA");
     }
   };
 
@@ -457,7 +470,20 @@ export default function Tasks() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 self-end sm:self-start">
+                  <div className="flex gap-2 self-end sm:self-start flex-wrap">
+                    {!isDone && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-11 w-11"
+                        aria-label="Completar com IA"
+                        title="Completar com IA no meu estilo"
+                        onClick={() => handleCompleteWithAI(task)}
+                        disabled={completeTaskMutation.isPending}
+                      >
+                        <Sparkles className="w-4 h-4 text-purple-500" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -496,6 +522,45 @@ export default function Tasks() {
           })
         )}
       </div>
+
+      <Dialog open={aiResult !== null} onOpenChange={(open) => !open && setAiResult(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="break-words">
+              Sugestão da IA para "{aiResult?.taskTitle}"
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Gerado imitando seu estilo (baseado nas Memórias). Revise antes de entregar.
+            </p>
+            <div className="prose prose-sm dark:prose-invert max-w-none break-words border rounded-lg p-4 bg-muted/30">
+              <Streamdown>{aiResult?.content ?? ""}</Streamdown>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <Button
+                variant="outline"
+                className="min-h-11"
+                onClick={async () => {
+                  if (!aiResult) return;
+                  try {
+                    await navigator.clipboard.writeText(aiResult.content);
+                    toast.success("Copiado!");
+                  } catch {
+                    toast.error("Não foi possível copiar");
+                  }
+                }}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Copiar texto
+              </Button>
+              <Button className="min-h-11" onClick={() => setAiResult(null)}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <AlertDialogContent>

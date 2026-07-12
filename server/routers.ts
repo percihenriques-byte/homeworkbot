@@ -219,6 +219,68 @@ export const appRouter = router({
           message: assistantMessage,
         };
       }),
+
+    // Completa uma tarefa imitando o estilo do usuário. Cria uma NOVA
+    // conversa dedicada, chama o LLM com memórias como contexto, e
+    // salva o resultado no campo completedContent da tarefa (que já
+    // existe no schema).
+    completeTask: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const task = await db.getTaskById(input.taskId, ctx.user.id);
+        if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
+
+        const prefs = await db.getUserPreferences(ctx.user.id);
+        const memories = await db.getUserMemoriesByUserId(ctx.user.id);
+
+        let systemPrompt =
+          `Você é o próprio usuário completando uma tarefa escolar. Escreva na primeira pessoa e imite fielmente o estilo, tom e vocabulário do usuário conforme mostrado nas memórias.\n` +
+          `Nunca mencione que é IA, nunca comente sobre a tarefa em terceira pessoa. Apenas produza o texto/resposta final como se fosse o usuário. Responda em Português (BR).`;
+
+        if (prefs?.aiStyle) {
+          systemPrompt += `\n\nEstilo preferido: ${prefs.aiStyle}`;
+        }
+
+        if (memories && memories.length > 0) {
+          systemPrompt += `\n\nAmostras do estilo de escrita do usuário (imite palavra por palavra a forma de escrever):\n`;
+          for (const memory of memories.slice(0, 5)) {
+            systemPrompt += `\n--- ${memory.title}${memory.category ? ` (${memory.category})` : ""} ---\n${memory.content.substring(0, 800)}\n`;
+          }
+        }
+
+        const userInstruction =
+          `Complete a seguinte tarefa escolar imitando meu estilo:\n\n` +
+          `Título: ${task.title}\n` +
+          (task.subject ? `Disciplina: ${task.subject}\n` : "") +
+          (task.type ? `Tipo: ${task.type}\n` : "") +
+          (task.description ? `\nDescrição da tarefa:\n${task.description}\n` : "") +
+          (task.notes ? `\nMinhas anotações:\n${task.notes}\n` : "");
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userInstruction },
+          ],
+        });
+
+        const raw = response.choices[0]?.message?.content;
+        const result =
+          typeof raw === "string"
+            ? raw
+            : Array.isArray(raw)
+              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
+              : "";
+
+        // Salva no próprio task para o usuário revisitar depois.
+        await db.updateTask(input.taskId, ctx.user.id, {
+          completedContent: result,
+        });
+
+        return {
+          taskId: input.taskId,
+          content: result,
+        };
+      }),
   }),
 
   flashcards: router({
