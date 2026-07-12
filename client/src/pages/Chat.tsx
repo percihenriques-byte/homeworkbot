@@ -17,6 +17,7 @@ export default function Chat() {
   const [messageInput, setMessageInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
 
   const selectedConv = conversations?.find(c => c.id === selectedConvId) as any;
   const messages: any[] = Array.isArray(selectedConv?.messages) ? selectedConv.messages : [];
@@ -24,6 +25,15 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, selectedConvId, sendMessageMutation.isPending]);
+
+  // Ao trocar de conversa (ou criar), foca no input. Em mobile o navegador
+  // pode ignorar o focus() por politica de gesture — o rAF ajuda a dar
+  // uma janela minima pra virtual keyboard nao roubar o foco.
+  useEffect(() => {
+    if (selectedConvId === null) return;
+    const id = requestAnimationFrame(() => messageInputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [selectedConvId]);
 
   const handleCreateConversation = async () => {
     try {
@@ -158,6 +168,7 @@ export default function Chat() {
 
             <div className="border-t border-border p-2 md:p-4 flex gap-2 flex-col md:flex-row">
               <Input
+                ref={messageInputRef}
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
                 onKeyDown={(e) => {
