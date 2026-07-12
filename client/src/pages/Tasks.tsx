@@ -65,6 +65,7 @@ export default function Tasks() {
     priority: "média" as const,
     type: "tarefa" as const,
     subject: "",
+    notes: "",
   });
 
   const handleSubmit = async () => {
@@ -96,6 +97,7 @@ export default function Tasks() {
         priority: "média",
         type: "tarefa",
         subject: "",
+        notes: "",
       });
       setEditingId(null);
       setIsOpen(false);
@@ -375,7 +377,21 @@ export default function Tasks() {
                     type="datetime-local"
                     value={formData.dueDate}
                     onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    className="min-h-11 mt-1"
                   />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Minhas Anotações</label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Adicione contexto que a IA deve considerar ao completar a tarefa (fontes, requisitos, exemplos...)"
+                    rows={3}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Essas anotações vão junto ao contexto quando a IA for completar a tarefa.
+                  </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                   <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto min-h-11">Cancelar</Button>
@@ -510,6 +526,7 @@ export default function Tasks() {
                           priority: task.priority as any,
                           type: task.type as any,
                           subject: task.subject || "",
+                          notes: task.notes || "",
                         });
                         setIsOpen(true);
                       }}
