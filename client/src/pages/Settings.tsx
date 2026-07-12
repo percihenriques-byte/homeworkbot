@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen } from "lucide-react";
+import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Settings() {
@@ -75,13 +75,28 @@ export default function Settings() {
     }
   };
 
-  const handleSaveIntegration = async () => {
-    if (!integrationData.emailSenderEmail && !integrationData.whatsappPhoneNumber && !integrationData.toddleEmail && !integrationData.gmailUser) {
-      toast.error("Adicione pelo menos um email, telefone, conta Toddle ou Gmail");
-      return;
+  const validateIntegration = (): string | null => {
+    if (
+      !integrationData.emailSenderEmail &&
+      !integrationData.whatsappPhoneNumber &&
+      !integrationData.toddleEmail &&
+      !integrationData.gmailUser
+    ) {
+      return "Adicione pelo menos um email, telefone, conta Toddle ou Gmail";
     }
-    if ((integrationData.gmailUser && !integrationData.gmailAppPassword) || (!integrationData.gmailUser && integrationData.gmailAppPassword)) {
-      toast.error("Configure tanto o Email do Gmail quanto a Senha de App");
+    if (
+      (integrationData.gmailUser && !integrationData.gmailAppPassword) ||
+      (!integrationData.gmailUser && integrationData.gmailAppPassword)
+    ) {
+      return "Configure tanto o Email do Gmail quanto a Senha de App";
+    }
+    return null;
+  };
+
+  const handleSaveIntegration = async () => {
+    const err = validateIntegration();
+    if (err) {
+      toast.error(err);
       return;
     }
     try {
@@ -92,15 +107,37 @@ export default function Settings() {
     }
   };
 
+  const handleSendTestEmail = async () => {
+    if (!integrationData.emailSenderEmail) {
+      toast.error("Preencha o campo Email primeiro");
+      return;
+    }
+    if (!integrationData.gmailUser || !integrationData.gmailAppPassword) {
+      toast.error("Configure Gmail + Senha de App antes de enviar o teste");
+      return;
+    }
+    try {
+      // Salva primeiro pra que o servidor use as credenciais que estao na tela,
+      // nao as antigas do banco. Antes, digitar email/senha nova e clicar em
+      // "Testar" sem salvar disparava com dados velhos e o teste falhava sem
+      // mensagem clara.
+      await updateIntegrationMutation.mutateAsync(integrationData);
+      await sendTestEmailMutation.mutateAsync({ toEmail: integrationData.emailSenderEmail });
+      toast.success("Email de teste enviado! Verifique sua caixa de entrada.");
+    } catch (error: any) {
+      toast.error("Erro ao enviar email de teste: " + (error?.message || "Tente novamente"));
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center">
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
           <SettingsIcon className="w-6 h-6 text-slate-300" />
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-white">Configurações</h1>
-          <p className="text-sm text-slate-400">Personalize sua experiência e integrações</p>
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">Configurações</h1>
+          <p className="text-sm text-slate-400 break-words">Personalize sua experiência e integrações</p>
         </div>
       </div>
 
@@ -277,45 +314,33 @@ export default function Settings() {
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-end mt-6">
               <Button
                 onClick={handleSaveIntegration}
-                disabled={updateIntegrationMutation.isPending}
+                disabled={updateIntegrationMutation.isPending || sendTestEmailMutation.isPending}
                 size="lg"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto min-h-12"
               >
                 {updateIntegrationMutation.isPending ? "Salvando..." : "Salvar Integrações"}
               </Button>
               <Button
-                onClick={() => {
-                  if (!integrationData.emailSenderEmail) {
-                    toast.error("Por favor, configure seu email primeiro");
-                    return;
-                  }
-                  sendTestEmailMutation.mutate(
-                    { toEmail: integrationData.emailSenderEmail },
-                    {
-                      onSuccess: () => {
-                        toast.success("Email de teste enviado com sucesso! Verifique sua caixa de entrada.");
-                      },
-                      onError: (error) => {
-                        toast.error("Erro ao enviar email de teste: " + (error.message || "Tente novamente"));
-                      },
-                    }
-                  );
-                }}
-                disabled={sendTestEmailMutation.isPending}
+                onClick={handleSendTestEmail}
+                disabled={sendTestEmailMutation.isPending || updateIntegrationMutation.isPending}
                 variant="outline"
                 size="lg"
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto min-h-12 gap-2"
               >
-                {sendTestEmailMutation.isPending ? "Enviando..." : "📧 Enviar Email de Teste"}
+                <Send className="w-4 h-4" />
+                {sendTestEmailMutation.isPending || updateIntegrationMutation.isPending
+                  ? "Enviando..."
+                  : "Enviar Email de Teste"}
               </Button>
             </div>
           </Card>
 
           <Card className="bg-blue-500/10 border-blue-500/30 p-4">
-            <h3 className="font-semibold text-blue-300 mb-2">✨ Tudo Automático</h3>
-            <p className="text-sm text-blue-200">
-              Não precisa configurar SMTP, API keys ou tokens. Basta informar seu email e telefone!
-              Nós cuidamos do resto.
+            <h3 className="font-semibold text-blue-300 mb-2">Sem configuração técnica</h3>
+            <p className="text-sm text-blue-200 break-words">
+              Nada de SMTP host/port, tokens ou API keys expostos. Você só precisa
+              informar seu Gmail (com Senha de App), seu WhatsApp e as credenciais do
+              Toddle — o resto é automático.
             </p>
           </Card>
         </TabsContent>
@@ -343,11 +368,12 @@ export default function Settings() {
             </div>
           </Card>
 
-          <div className="flex justify-end">
+          <div className="flex flex-col sm:flex-row sm:justify-end">
             <Button
               onClick={handleSavePrefs}
               disabled={updatePrefsMutation.isPending}
               size="lg"
+              className="w-full sm:w-auto min-h-12"
             >
               {updatePrefsMutation.isPending ? "Salvando..." : "Salvar Preferências"}
             </Button>
