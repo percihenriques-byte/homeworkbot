@@ -6,6 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
@@ -30,6 +40,7 @@ export default function Tasks() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas">("pendentes");
   const [search, setSearch] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -78,10 +89,12 @@ export default function Tasks() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
     try {
-      await deleteTaskMutation.mutateAsync({ id });
+      await deleteTaskMutation.mutateAsync({ id: deleteConfirm.id });
       toast.success("Tarefa deletada!");
+      setDeleteConfirm(null);
       refetch();
     } catch (error) {
       toast.error("Erro ao deletar tarefa");
@@ -459,7 +472,7 @@ export default function Tasks() {
                       size="icon"
                       className="h-11 w-11"
                       aria-label="Deletar tarefa"
-                      onClick={() => handleDelete(task.id)}
+                      onClick={() => setDeleteConfirm({ id: task.id, title: task.title })}
                       disabled={deleteTaskMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -471,6 +484,27 @@ export default function Tasks() {
           })
         )}
       </div>
+
+      <AlertDialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar esta tarefa?</AlertDialogTitle>
+            <AlertDialogDescription className="break-words">
+              "{deleteConfirm?.title}" será removida permanentemente. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteTaskMutation.isPending}
+              className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTaskMutation.isPending ? "Deletando..." : "Sim, deletar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

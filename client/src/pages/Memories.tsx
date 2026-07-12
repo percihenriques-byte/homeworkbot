@@ -4,6 +4,16 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -21,6 +31,7 @@ const emptyForm: MemoryFormData = { title: "", category: "", content: "", source
 export default function Memories() {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<MemoryFormData>(emptyForm);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
 
   const { data: memories, refetch } = trpc.memories.list.useQuery();
   const createMutation = trpc.memories.create.useMutation();
@@ -42,9 +53,11 @@ export default function Memories() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
     try {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id: deleteConfirm.id });
+      setDeleteConfirm(null);
       await refetch();
       toast.success("Memória removida");
     } catch {
@@ -175,7 +188,7 @@ export default function Memories() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDelete(memory.id)}
+                    onClick={() => setDeleteConfirm({ id: memory.id, title: memory.title })}
                     disabled={deleteMutation.isPending}
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-11 w-11 self-end sm:self-start"
                     aria-label="Remover memória"
@@ -197,6 +210,27 @@ export default function Memories() {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover esta memória?</AlertDialogTitle>
+            <AlertDialogDescription className="break-words">
+              "{deleteConfirm?.title}" será removida permanentemente. Sua IA vai perder essa referência de estilo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Removendo..." : "Sim, remover"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card className="bg-blue-500/10 border-blue-500/30 p-4">
         <h3 className="font-semibold text-blue-300 mb-2">Como usar Memórias</h3>
