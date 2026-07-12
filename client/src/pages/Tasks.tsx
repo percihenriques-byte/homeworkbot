@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -101,11 +101,20 @@ export default function Tasks() {
     return <div className="p-8 text-center">Carregando tarefas...</div>;
   }
 
-  const sortedTasks = (tasks || []).sort((a, b) => {
-    const priorityOrder = { alta: 0, média: 1, baixa: 2 };
-    const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 3;
-    const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 3;
-    return aPriority - bPriority;
+  // Ordena por prioridade. Usa `?? 3` (nao `|| 3`) pra que "alta"=0 nao vire 3.
+  // Normaliza a string pra tirar acentos e caixa antes de comparar — evita
+  // que uma variacao inesperada ("Média", "media") fure o mapa.
+  const normalize = (v: unknown): string =>
+    String(v ?? "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .trim();
+  const priorityRank: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
+  const sortedTasks = [...(tasks || [])].sort((a, b) => {
+    const aRank = priorityRank[normalize(a.priority)] ?? 3;
+    const bRank = priorityRank[normalize(b.priority)] ?? 3;
+    return aRank - bRank;
   });
 
   return (
@@ -121,21 +130,32 @@ export default function Tasks() {
       )}
 
       {toddleConnected && (
-        <Card className="bg-green-500/10 border-green-500/20 p-4 flex items-start gap-3">
+        <Card className="bg-green-500/10 border-green-500/20 p-4 flex items-start gap-3 flex-wrap">
           <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="font-medium text-green-900">Conectado ao Toddle</p>
-            <p className="text-sm text-green-800">Sincronização automática ativa - suas tarefas do Toddle aparecem aqui.</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-green-900">Credenciais Toddle salvas</p>
+            <p className="text-sm text-green-800 break-words">
+              Suas credenciais estão prontas. Clique em "Sincronizar" para importar tarefas do Toddle.
+            </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 min-h-11 w-full sm:w-auto"
+            disabled
+            title="Sincronização automática será implementada em breve"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Sincronizar
+          </Button>
         </Card>
       )}
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Minhas Tarefas</h1>
-        {!toddleConnected && (
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold">Minhas Tarefas</h1>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 min-h-11">
                 <Plus className="w-4 h-4" />
                 Nova Tarefa
               </Button>
@@ -224,15 +244,14 @@ export default function Tasks() {
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                  <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto">Cancelar</Button>
-                  <Button onClick={handleSubmit} disabled={createTaskMutation.isPending || updateTaskMutation.isPending} className="w-full sm:w-auto">
+                  <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto min-h-11">Cancelar</Button>
+                  <Button onClick={handleSubmit} disabled={createTaskMutation.isPending || updateTaskMutation.isPending} className="w-full sm:w-auto min-h-11">
                     {editingId ? "Atualizar" : "Criar"}
                   </Button>
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
-        )}
+        </Dialog>
       </div>
 
       <div className="grid gap-4">
@@ -245,35 +264,50 @@ export default function Tasks() {
             </p>
           </Card>
         ) : (
-          sortedTasks.map((task) => (
-            <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-lg">{task.title}</h3>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${priorityColors[task.priority as keyof typeof priorityColors]}`}>
-                      {task.priority}
-                    </span>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${difficultyColors[task.difficulty as keyof typeof difficultyColors]}`}>
-                      {task.difficulty}
-                    </span>
+          sortedTasks.map((task) => {
+            const pri = normalize(task.priority);
+            const dif = normalize(task.difficulty);
+            const priClass = priorityColors[pri as keyof typeof priorityColors] ?? "bg-muted text-muted-foreground";
+            const difClass = difficultyColors[dif as keyof typeof difficultyColors] ?? "bg-muted text-muted-foreground";
+            return (
+              <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
+                <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
+                  <div className="flex-1 min-w-0 w-full">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="font-semibold text-base sm:text-lg break-words">{task.title}</h3>
+                      {task.priority && (
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${priClass}`}>
+                          {task.priority}
+                        </span>
+                      )}
+                      {task.difficulty && (
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${difClass}`}>
+                          {task.difficulty}
+                        </span>
+                      )}
+                    </div>
+                    {task.description && <p className="text-sm text-muted-foreground mb-2 break-words">{task.description}</p>}
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                      {task.subject && (
+                        <span className="flex items-center gap-1">
+                          <BookMarked className="w-4 h-4" />
+                          {task.subject}
+                        </span>
+                      )}
+                      {task.dueDate && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {new Date(task.dueDate).toLocaleDateString("pt-BR")}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {task.description && <p className="text-sm text-muted-foreground mb-2">{task.description}</p>}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {task.subject && <span>📚 {task.subject}</span>}
-                    {task.dueDate && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {new Date(task.dueDate).toLocaleDateString("pt-BR")}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {!toddleConnected && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 self-end sm:self-start">
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-11 w-11"
+                      aria-label="Editar tarefa"
                       onClick={() => {
                         setEditingId(task.id);
                         setFormData({
@@ -292,17 +326,19 @@ export default function Tasks() {
                     </Button>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
+                      className="h-11 w-11"
+                      aria-label="Deletar tarefa"
                       onClick={() => handleDelete(task.id)}
                       disabled={deleteTaskMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
-                )}
-              </div>
-            </Card>
-          ))
+                </div>
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
