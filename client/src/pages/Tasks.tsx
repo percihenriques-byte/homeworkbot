@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -85,6 +86,18 @@ export default function Tasks() {
     }
   };
 
+  const handleToggleComplete = async (task: any) => {
+    const currentStatus = normalize(task.status);
+    const newStatus = currentStatus === "concluida" ? "pendente" : "concluída";
+    try {
+      await updateTaskMutation.mutateAsync({ id: task.id, status: newStatus as any });
+      toast.success(newStatus === "concluída" ? "Tarefa concluída!" : "Tarefa reaberta");
+      refetch();
+    } catch {
+      toast.error("Erro ao atualizar status");
+    }
+  };
+
   const priorityColors = {
     baixa: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
     média: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400",
@@ -150,6 +163,23 @@ export default function Tasks() {
           </Button>
         </Card>
       )}
+
+      {sortedTasks.length > 0 && (() => {
+        const done = sortedTasks.filter(t => normalize(t.status) === "concluida").length;
+        const total = sortedTasks.length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        return (
+          <Card className="p-4">
+            <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+              <p className="text-sm font-medium">
+                Progresso: {done} de {total} concluída{total === 1 ? "" : "s"}
+              </p>
+              <span className="text-sm text-muted-foreground">{pct}%</span>
+            </div>
+            <Progress value={pct} />
+          </Card>
+        );
+      })()}
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold">Minhas Tarefas</h1>
@@ -267,39 +297,57 @@ export default function Tasks() {
           sortedTasks.map((task) => {
             const pri = normalize(task.priority);
             const dif = normalize(task.difficulty);
+            const isDone = normalize(task.status) === "concluida";
             const priClass = priorityColors[pri as keyof typeof priorityColors] ?? "bg-muted text-muted-foreground";
             const difClass = difficultyColors[dif as keyof typeof difficultyColors] ?? "bg-muted text-muted-foreground";
             return (
-              <Card key={task.id} className="p-4 hover:shadow-md transition-shadow">
+              <Card key={task.id} className={`p-4 hover:shadow-md transition-shadow ${isDone ? "opacity-70" : ""}`}>
                 <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
-                  <div className="flex-1 min-w-0 w-full">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="font-semibold text-base sm:text-lg break-words">{task.title}</h3>
-                      {task.priority && (
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${priClass}`}>
-                          {task.priority}
-                        </span>
+                  <div className="flex items-start gap-3 flex-1 min-w-0 w-full">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11 shrink-0 -ml-2"
+                      onClick={() => handleToggleComplete(task)}
+                      disabled={updateTaskMutation.isPending}
+                      aria-label={isDone ? "Reabrir tarefa" : "Marcar como concluída"}
+                      title={isDone ? "Reabrir tarefa" : "Marcar como concluída"}
+                    >
+                      {isDone ? (
+                        <CircleCheck className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-muted-foreground" />
                       )}
-                      {task.difficulty && (
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${difClass}`}>
-                          {task.difficulty}
-                        </span>
-                      )}
-                    </div>
-                    {task.description && <p className="text-sm text-muted-foreground mb-2 break-words">{task.description}</p>}
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                      {task.subject && (
-                        <span className="flex items-center gap-1">
-                          <BookMarked className="w-4 h-4" />
-                          {task.subject}
-                        </span>
-                      )}
-                      {task.dueDate && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {new Date(task.dueDate).toLocaleDateString("pt-BR")}
-                        </span>
-                      )}
+                    </Button>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <h3 className={`font-semibold text-base sm:text-lg break-words ${isDone ? "line-through" : ""}`}>{task.title}</h3>
+                        {task.priority && (
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${priClass}`}>
+                            {task.priority}
+                          </span>
+                        )}
+                        {task.difficulty && (
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${difClass}`}>
+                            {task.difficulty}
+                          </span>
+                        )}
+                      </div>
+                      {task.description && <p className="text-sm text-muted-foreground mb-2 break-words">{task.description}</p>}
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                        {task.subject && (
+                          <span className="flex items-center gap-1">
+                            <BookMarked className="w-4 h-4" />
+                            {task.subject}
+                          </span>
+                        )}
+                        {task.dueDate && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {new Date(task.dueDate).toLocaleDateString("pt-BR")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-2 self-end sm:self-start">
