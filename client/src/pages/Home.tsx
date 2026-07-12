@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,7 +10,14 @@ export default function Home() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
 
-  if (loading) {
+  // Redireciona no efeito, NUNCA durante o render (anti-pattern React).
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate("/tarefas");
+    }
+  }, [isAuthenticated, loading, navigate]);
+
+  if (loading || isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -18,11 +26,6 @@ export default function Home() {
         </div>
       </div>
     );
-  }
-
-  if (isAuthenticated) {
-    navigate("/tarefas");
-    return null;
   }
 
   return (
@@ -34,10 +37,10 @@ export default function Home() {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <Brain className="w-6 h-6 text-white" />
             </div>
-            <span className="font-bold text-xl text-white">StudyMate</span>
+            <span className="font-bold text-xl text-white">Homework Assistant</span>
           </div>
           <a href={getLoginUrl()}>
-            <Button className="gap-2">
+            <Button className="gap-2 min-h-11">
               Entrar
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -53,22 +56,22 @@ export default function Home() {
             <span className="text-sm text-slate-300">Inteligência Artificial para seus Estudos</span>
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight break-words">
             Seu Assistente de Estudos Inteligente
           </h1>
 
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-slate-300 mb-8 max-w-2xl mx-auto break-words">
             Organize suas tarefas, converse com IA, gere flashcards e cronogramas personalizados. Tudo em um único lugar, em Português.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href={getLoginUrl()}>
-              <Button size="lg" className="gap-2 w-full sm:w-auto">
+            <a href={getLoginUrl()} className="w-full sm:w-auto">
+              <Button size="lg" className="gap-2 w-full sm:w-auto min-h-12">
                 Começar Agora
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </a>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-12">
               Saber Mais
             </Button>
           </div>
@@ -78,9 +81,9 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-white text-center mb-16">Recursos Poderosos</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-12 sm:mb-16 break-words">Recursos Poderosos</h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1 */}
             <Card className="bg-slate-800/50 border-slate-700 hover:border-blue-500/50 transition-all p-6">
               <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4">
@@ -153,7 +156,7 @@ export default function Home() {
       {/* Benefits Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-white text-center mb-16">Por Que Escolher StudyMate?</h2>
+          <h2 className="text-4xl font-bold text-white text-center mb-16">Por Que Escolher Homework Assistant?</h2>
 
           <div className="space-y-6">
             {[
@@ -191,12 +194,12 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-t border-slate-700">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">Pronto para Revolucionar Seus Estudos?</h2>
-          <p className="text-xl text-slate-300 mb-8">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 break-words">Pronto para Revolucionar Seus Estudos?</h2>
+          <p className="text-lg sm:text-xl text-slate-300 mb-8 break-words">
             Crie sua conta agora e comece a estudar de forma inteligente.
           </p>
           <a href={getLoginUrl()}>
-            <Button size="lg" className="gap-2">
+            <Button size="lg" className="gap-2 min-h-12">
               Criar Conta Grátis
               <ArrowRight className="w-4 h-4" />
             </Button>
@@ -207,7 +210,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-slate-700 py-8 px-4 sm:px-6 lg:px-8 bg-slate-950/50">
         <div className="max-w-6xl mx-auto text-center text-slate-400 text-sm">
-          <p>© 2026 StudyMate. Todos os direitos reservados.</p>
+          <p>© 2026 Homework Assistant. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
