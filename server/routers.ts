@@ -538,6 +538,31 @@ export const appRouter = router({
       }),
   }),
 
+  toddle: router({
+    // Sync real ainda não implementado. Endpoint existe pra que o botão
+    // "Sincronizar" tenha um destino de verdade — retorna erro claro em
+    // vez de fingir sucesso. Assim que o parser do Toddle estiver pronto,
+    // é só substituir o corpo deste handler.
+    sync: protectedProcedure.mutation(async ({ ctx }) => {
+      const settings = await db.getIntegrationSettings(ctx.user.id);
+      if (!settings?.toddleEmail || !settings?.toddlePassword) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Configure suas credenciais do Toddle em Configurações antes de sincronizar.",
+        });
+      }
+      // TODO(toddle-sync): implementar autenticação e parser das tarefas
+      // por provedor (Lex Brasil, Toddle Direct, Google, Microsoft).
+      throw new TRPCError({
+        code: "NOT_IMPLEMENTED",
+        message:
+          "Sincronização automática com Toddle ainda não está disponível para o provedor " +
+          (settings.toddleProvider || "configurado") +
+          ". Enquanto isso, crie tarefas manualmente ou aguarde a próxima atualização.",
+      });
+    }),
+  }),
+
   email: router({
     sendTest: protectedProcedure
       .input(z.object({

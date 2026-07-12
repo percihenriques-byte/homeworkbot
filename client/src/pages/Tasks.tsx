@@ -26,7 +26,19 @@ export default function Tasks() {
   const createTaskMutation = trpc.tasks.create.useMutation();
   const updateTaskMutation = trpc.tasks.update.useMutation();
   const deleteTaskMutation = trpc.tasks.delete.useMutation();
+  const toddleSyncMutation = trpc.toddle.sync.useMutation();
   const [toddleConnected, setToddleConnected] = useState(false);
+
+  const handleToddleSync = async () => {
+    try {
+      await toddleSyncMutation.mutateAsync();
+      await refetch();
+      toast.success("Sincronização concluída!");
+    } catch (error: any) {
+      // Mensagem do TRPCError propaga daqui — usuário vê texto honesto
+      toast.error(error?.message || "Erro ao sincronizar com o Toddle");
+    }
+  };
 
   useEffect(() => {
     if (integrationSettings?.toddleEmail) {
@@ -194,11 +206,11 @@ export default function Tasks() {
             variant="outline"
             size="sm"
             className="gap-2 min-h-11 w-full sm:w-auto"
-            disabled
-            title="Sincronização automática será implementada em breve"
+            onClick={handleToddleSync}
+            disabled={toddleSyncMutation.isPending}
           >
-            <RefreshCw className="w-4 h-4" />
-            Sincronizar
+            <RefreshCw className={`w-4 h-4 ${toddleSyncMutation.isPending ? "animate-spin" : ""}`} />
+            {toddleSyncMutation.isPending ? "Sincronizando..." : "Sincronizar"}
           </Button>
         </Card>
       )}
