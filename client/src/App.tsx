@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Redirect, Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
@@ -14,42 +14,22 @@ import Settings from "./pages/Settings";
 import Memories from "./pages/Memories";
 import { useAuth } from "./_core/hooks/useAuth";
 
-// Create stable route components to prevent remounting on parent re-renders
-const TasksRoute = () => (
-  <DashboardLayout>
-    <Tasks />
-  </DashboardLayout>
-);
+// Rotas estaveis (evita remounting em cada re-render do Router).
+const TasksRoute = () => (<DashboardLayout><Tasks /></DashboardLayout>);
+const ChatRoute = () => (<DashboardLayout><Chat /></DashboardLayout>);
+const StudyToolsRoute = () => (<DashboardLayout><StudyTools /></DashboardLayout>);
+const ScheduleRoute = () => (<DashboardLayout><Schedule /></DashboardLayout>);
+const MemoriesRoute = () => (<DashboardLayout><Memories /></DashboardLayout>);
+const SettingsRoute = () => (<DashboardLayout><Settings /></DashboardLayout>);
 
-const ChatRoute = () => (
-  <DashboardLayout>
-    <Chat />
-  </DashboardLayout>
-);
-
-const StudyToolsRoute = () => (
-  <DashboardLayout>
-    <StudyTools />
-  </DashboardLayout>
-);
-
-const ScheduleRoute = () => (
-  <DashboardLayout>
-    <Schedule />
-  </DashboardLayout>
-);
-
-const MemoriesRoute = () => (
-  <DashboardLayout>
-    <Memories />
-  </DashboardLayout>
-);
-
-const SettingsRoute = () => (
-  <DashboardLayout>
-    <Settings />
-  </DashboardLayout>
-);
+const PROTECTED_ROUTES: Array<{ path: string; component: React.ComponentType }> = [
+  { path: "/tarefas", component: TasksRoute },
+  { path: "/chat", component: ChatRoute },
+  { path: "/ferramentas", component: StudyToolsRoute },
+  { path: "/cronograma", component: ScheduleRoute },
+  { path: "/memorias", component: MemoriesRoute },
+  { path: "/configuracoes", component: SettingsRoute },
+];
 
 function Router() {
   const { isAuthenticated, loading } = useAuth();
@@ -68,17 +48,11 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      {isAuthenticated && (
-        <>
-          <Route path="/tarefas" component={TasksRoute} />
-          <Route path="/chat" component={ChatRoute} />
-          <Route path="/ferramentas" component={StudyToolsRoute} />
-          <Route path="/cronograma" component={ScheduleRoute} />
-          <Route path="/memorias" component={MemoriesRoute} />
-          <Route path="/configuracoes" component={SettingsRoute} />
-        </>
-      )}
-      <Route path="/404" component={NotFound} />
+      {PROTECTED_ROUTES.map(({ path, component: Component }) => (
+        <Route key={path} path={path}>
+          {isAuthenticated ? <Component /> : <Redirect to="/" />}
+        </Route>
+      ))}
       <Route component={NotFound} />
     </Switch>
   );
