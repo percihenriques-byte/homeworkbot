@@ -3,21 +3,27 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Plus, Send, Trash2 } from "lucide-react";
+import { Image as ImageIcon, Loader2, Paperclip, Plus, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+
+type Attachment = { name: string; url: string; type: "image" | "document" | "audio" };
 
 export default function Chat() {
   const { data: conversations, refetch } = trpc.conversations.list.useQuery();
   const createConvMutation = trpc.conversations.create.useMutation();
   const deleteConvMutation = trpc.conversations.delete.useMutation();
   const sendMessageMutation = trpc.chat.message.useMutation();
+  const uploadMutation = trpc.upload.file.useMutation();
 
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedConv = conversations?.find(c => c.id === selectedConvId) as any;
   const messages: any[] = Array.isArray(selectedConv?.messages) ? selectedConv.messages : [];
@@ -50,19 +56,71 @@ export default function Chat() {
   };
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConvId || sendMessageMutation.isPending) return;
+    const hasText = messageInput.trim().length > 0;
+    const hasAttachments = pendingAttachments.length > 0;
+    if ((!hasText && !hasAttachments) || !selectedConvId || sendMessageMutation.isPending) return;
     const outgoing = messageInput;
+    const outgoingAttachments = pendingAttachments;
     setMessageInput("");
+    setPendingAttachments([]);
     try {
       await sendMessageMutation.mutateAsync({
         conversationId: selectedConvId,
-        message: outgoing,
+        message: outgoing || "(arquivo anexado)",
+        fileUrls: outgoingAttachments.map((a) => ({ url: a.url, type: a.type })),
       });
       await refetch();
     } catch {
       toast.error("Erro ao enviar mensagem");
       setMessageInput(outgoing);
+      setPendingAttachments(outgoingAttachments);
     }
+  };
+
+  const inferAttachmentType = (mime: string): Attachment["type"] => {
+    if (mime.startsWith("image/")) return "image";
+    if (mime.startsWith("audio/")) return "audio";
+    return "document";
+  };
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const uploaded: Attachment[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`"${file.name}" excede 10MB e foi ignorado`);
+          continue;
+        }
+        const buffer = await file.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        const res = await uploadMutation.mutateAsync({
+          fileName: file.name,
+          fileData: base64,
+          mimeType: file.type || "application/octet-stream",
+        });
+        uploaded.push({
+          name: file.name,
+          url: res.url,
+          type: inferAttachmentType(file.type || ""),
+        });
+      }
+      setPendingAttachments((prev) => [...prev, ...uploaded]);
+      if (uploaded.length > 0) {
+        toast.success(`${uploaded.length} arquivo(s) anexado(s)`);
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao enviar arquivo");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removePendingAttachment = (idx: number) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleDeleteConversation = async (id: number) => {
@@ -141,6 +199,7 @@ export default function Chat() {
             <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4">
               {messages.map((msg: any, idx: number) => {
                 const content = typeof msg.content === "string" ? msg.content : String(msg.content ?? "");
+                const attachments: any[] = Array.isArray(msg.attachments) ? msg.attachments : [];
                 return (
                   <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div className={`max-w-[85%] md:max-w-md px-4 py-2 rounded-lg break-words ${
@@ -148,6 +207,31 @@ export default function Chat() {
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-foreground"
                     }`}>
+                      {attachments.length > 0 && (
+                        <div className="mb-2 space-y-2">
+                          {attachments.map((att: any, aidx: number) => (
+                            att.type === "image" ? (
+                              <img
+                                key={aidx}
+                                src={att.url}
+                                alt="Anexo"
+                                className="rounded max-w-full max-h-64 object-contain"
+                              />
+                            ) : (
+                              <a
+                                key={aidx}
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 underline hover:opacity-80"
+                              >
+                                <Paperclip className="w-4 h-4" />
+                                Ver arquivo
+                              </a>
+                            )
+                          ))}
+                        </div>
+                      )}
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <Streamdown>{content}</Streamdown>
                       </div>
@@ -166,33 +250,86 @@ export default function Chat() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t border-border p-2 md:p-4 flex gap-2 flex-col md:flex-row">
-              <Input
-                ref={messageInputRef}
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
+            <div className="border-t border-border p-2 md:p-4 space-y-2">
+              {pendingAttachments.length > 0 && (
+                <div className="flex gap-2 flex-wrap">
+                  {pendingAttachments.map((a, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 text-sm max-w-full"
+                    >
+                      {a.type === "image" ? (
+                        <ImageIcon className="w-4 h-4 flex-shrink-0" />
+                      ) : (
+                        <Paperclip className="w-4 h-4 flex-shrink-0" />
+                      )}
+                      <span className="truncate max-w-[180px]">{a.name}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 shrink-0"
+                        aria-label="Remover anexo"
+                        onClick={() => removePendingAttachment(idx)}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2 flex-col md:flex-row">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFilePick}
+                  accept="image/*,application/pdf,audio/*"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 shrink-0 md:self-auto self-end"
+                  aria-label="Anexar arquivo"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || sendMessageMutation.isPending}
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="w-4 h-4" />
+                  )}
+                </Button>
+                <Input
+                  ref={messageInputRef}
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={pendingAttachments.length > 0 ? "Descreva o anexo (opcional)..." : "Digite sua mensagem..."}
+                  disabled={sendMessageMutation.isPending}
+                  className="w-full md:flex-1 min-h-11"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={
+                    sendMessageMutation.isPending ||
+                    (!messageInput.trim() && pendingAttachments.length === 0)
                   }
-                }}
-                placeholder="Digite sua mensagem..."
-                disabled={sendMessageMutation.isPending}
-                className="w-full md:flex-1 min-h-11"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={sendMessageMutation.isPending || !messageInput.trim()}
-                className="w-full md:w-auto min-h-11"
-                aria-label="Enviar mensagem"
-              >
-                {sendMessageMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
+                  className="w-full md:w-auto min-h-11"
+                  aria-label="Enviar mensagem"
+                >
+                  {sendMessageMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </>
         ) : (
