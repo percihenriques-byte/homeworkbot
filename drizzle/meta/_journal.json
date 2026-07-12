@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1783043957419,
+      "tag": "0000_same_squadron_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1783044213847,
+      "tag": "0001_sloppy_johnny_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1783045515311,
+      "tag": "0002_useful_gabe_jones",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1783085232732,
+      "tag": "0003_spicy_speedball",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1783096815263,
+      "tag": "0004_misty_gargoyle",
+      "breakpoints": true
+    }
+  ]
+}

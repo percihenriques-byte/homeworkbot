@@ -1,0 +1,1 @@
+ALTER TABLE `integrationSettings` ADD `toddleProvider` varchar(100) DEFAULT 'Lex Brasil';
