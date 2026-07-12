@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send } from "lucide-react";
+import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send, Eye, EyeOff } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Settings() {
@@ -35,6 +35,9 @@ export default function Settings() {
     gmailUser: "",
     gmailAppPassword: "",
   });
+
+  const [showToddlePw, setShowToddlePw] = useState(false);
+  const [showGmailPw, setShowGmailPw] = useState(false);
 
   const sendTestEmailMutation = trpc.email.sendTest.useMutation();
 
@@ -248,18 +251,30 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-white">Senha do Toddle</label>
-                    <Input
-                      type="password"
-                      value={integrationData.toddlePassword}
-                      onChange={(e) =>
-                        setIntegrationData({
-                          ...integrationData,
-                          toddlePassword: e.target.value,
-                        })
-                      }
-                      placeholder="Sua senha"
-                      className="bg-slate-700 border-slate-600 text-white mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <Input
+                        type={showToddlePw ? "text" : "password"}
+                        value={integrationData.toddlePassword}
+                        onChange={(e) =>
+                          setIntegrationData({
+                            ...integrationData,
+                            toddlePassword: e.target.value,
+                          })
+                        }
+                        placeholder="Sua senha"
+                        className="bg-slate-700 border-slate-600 text-white pr-12"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-slate-300 hover:text-white"
+                        onClick={() => setShowToddlePw((v) => !v)}
+                        aria-label={showToddlePw ? "Esconder senha" : "Mostrar senha"}
+                      >
+                        {showToddlePw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-xs text-slate-400">
                     Use seu nome de usuário ou email do Toddle. Suas credenciais são criptografadas e usadas apenas para sincronizar com Toddle.
@@ -292,18 +307,30 @@ export default function Settings() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-white">Senha de App do Google</label>
-                  <Input
-                    type="password"
-                    value={integrationData.gmailAppPassword}
-                    onChange={(e) =>
-                      setIntegrationData({
-                        ...integrationData,
-                        gmailAppPassword: e.target.value,
-                      })
-                    }
-                    placeholder="Sua senha de app"
-                    className="bg-slate-600 border-slate-500 text-white mt-1"
-                  />
+                  <div className="relative mt-1">
+                    <Input
+                      type={showGmailPw ? "text" : "password"}
+                      value={integrationData.gmailAppPassword}
+                      onChange={(e) =>
+                        setIntegrationData({
+                          ...integrationData,
+                          gmailAppPassword: e.target.value,
+                        })
+                      }
+                      placeholder="Sua senha de app"
+                      className="bg-slate-600 border-slate-500 text-white pr-12"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-slate-300 hover:text-white"
+                      onClick={() => setShowGmailPw((v) => !v)}
+                      aria-label={showGmailPw ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {showGmailPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400">
                   Gere sua senha de app em <strong>myaccount.google.com → Segurança → Senhas de app</strong>. Suas credenciais são criptografadas e usadas apenas para enviar emails.
