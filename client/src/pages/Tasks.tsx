@@ -28,6 +28,8 @@ export default function Tasks() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas">("pendentes");
+  const [search, setSearch] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -124,11 +126,35 @@ export default function Tasks() {
       .toLowerCase()
       .trim();
   const priorityRank: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
-  const sortedTasks = [...(tasks || [])].sort((a, b) => {
+  const allTasks = [...(tasks || [])].sort((a, b) => {
+    // Concluídas por último
+    const aDone = normalize(a.status) === "concluida" ? 1 : 0;
+    const bDone = normalize(b.status) === "concluida" ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+    // Depois por prioridade
     const aRank = priorityRank[normalize(a.priority)] ?? 3;
     const bRank = priorityRank[normalize(b.priority)] ?? 3;
-    return aRank - bRank;
+    if (aRank !== bRank) return aRank - bRank;
+    // Depois por data mais próxima
+    const aDue = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+    const bDue = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+    return aDue - bDue;
   });
+
+  const searchLower = search.trim().toLowerCase();
+  const sortedTasks = allTasks.filter((t) => {
+    const done = normalize(t.status) === "concluida";
+    if (filter === "pendentes" && done) return false;
+    if (filter === "concluidas" && !done) return false;
+    if (searchLower) {
+      const hay = `${t.title ?? ""} ${t.description ?? ""} ${t.subject ?? ""}`.toLowerCase();
+      if (!hay.includes(searchLower)) return false;
+    }
+    return true;
+  });
+
+  const totalDone = allTasks.filter((t) => normalize(t.status) === "concluida").length;
+  const totalPending = allTasks.length - totalDone;
 
   return (
     <div className="space-y-6">
@@ -164,15 +190,13 @@ export default function Tasks() {
         </Card>
       )}
 
-      {sortedTasks.length > 0 && (() => {
-        const done = sortedTasks.filter(t => normalize(t.status) === "concluida").length;
-        const total = sortedTasks.length;
-        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      {allTasks.length > 0 && (() => {
+        const pct = allTasks.length > 0 ? Math.round((totalDone / allTasks.length) * 100) : 0;
         return (
           <Card className="p-4">
             <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
               <p className="text-sm font-medium">
-                Progresso: {done} de {total} concluída{total === 1 ? "" : "s"}
+                Progresso: {totalDone} de {allTasks.length} concluída{allTasks.length === 1 ? "" : "s"}
               </p>
               <span className="text-sm text-muted-foreground">{pct}%</span>
             </div>
@@ -180,6 +204,37 @@ export default function Tasks() {
           </Card>
         );
       })()}
+
+      {allTasks.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="flex gap-1 rounded-lg bg-muted p-1 self-start flex-wrap">
+            <button
+              onClick={() => setFilter("pendentes")}
+              className={`px-3 py-2 rounded text-sm min-h-9 transition-colors ${filter === "pendentes" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Pendentes ({totalPending})
+            </button>
+            <button
+              onClick={() => setFilter("concluidas")}
+              className={`px-3 py-2 rounded text-sm min-h-9 transition-colors ${filter === "concluidas" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Concluídas ({totalDone})
+            </button>
+            <button
+              onClick={() => setFilter("todas")}
+              className={`px-3 py-2 rounded text-sm min-h-9 transition-colors ${filter === "todas" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Todas ({allTasks.length})
+            </button>
+          </div>
+          <Input
+            placeholder="Buscar por título, descrição ou disciplina..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="min-h-11 sm:flex-1"
+          />
+        </div>
+      )}
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold">Minhas Tarefas</h1>
@@ -287,10 +342,16 @@ export default function Tasks() {
       <div className="grid gap-4">
         {sortedTasks.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-muted-foreground">
-              {toddleConnected 
-                ? "Nenhuma tarefa sincronizada do Toddle ainda. Verifique suas atribuições lá."
-                : "Nenhuma tarefa criada ainda. Crie uma para começar!"}
+            <p className="text-muted-foreground break-words">
+              {allTasks.length === 0
+                ? toddleConnected
+                  ? "Nenhuma tarefa sincronizada do Toddle ainda. Verifique suas atribuições lá."
+                  : "Nenhuma tarefa criada ainda. Crie uma para começar!"
+                : searchLower
+                  ? `Nenhuma tarefa encontrada para "${search}". Ajuste a busca ou o filtro.`
+                  : filter === "pendentes"
+                    ? "Tudo em dia! Nenhuma tarefa pendente."
+                    : "Nenhuma tarefa concluída ainda."}
             </p>
           </Card>
         ) : (
