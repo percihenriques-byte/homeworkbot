@@ -276,6 +276,18 @@ export const appRouter = router({
       }),
   }),
 
+  quizzes: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getQuizzesByUserId(ctx.user.id);
+    }),
+  }),
+
+  studyGuides: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return await db.getStudyGuidesByUserId(ctx.user.id);
+    }),
+  }),
+
   studyTools: router({
     generateFlashcards: protectedProcedure
       .input(z.object({
