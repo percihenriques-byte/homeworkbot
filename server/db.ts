@@ -137,9 +137,10 @@ export async function upsertUserPreferences(userId: number, prefs: Partial<Inser
 export async function createTask(task: InsertTask) {
   const db = await getDb();
   if (!db) return undefined;
-  
-  const result = await db.insert(tasks).values(task);
-  return result;
+
+  const [inserted] = await db.insert(tasks).values(task).$returningId();
+  if (!inserted) return undefined;
+  return await getTaskById(inserted.id, task.userId);
 }
 
 export async function getTasksByUserId(userId: number) {
@@ -195,9 +196,10 @@ export async function getUpcomingTasks(userId: number, daysAhead: number = 7) {
 export async function createConversation(conv: InsertConversation) {
   const db = await getDb();
   if (!db) return undefined;
-  
-  const result = await db.insert(conversations).values(conv);
-  return result;
+
+  const [inserted] = await db.insert(conversations).values(conv).$returningId();
+  if (!inserted) return undefined;
+  return await getConversationById(inserted.id, conv.userId);
 }
 
 export async function getConversationsByUserId(userId: number) {
@@ -383,9 +385,10 @@ export async function updateEmailReminder(id: number, updates: Partial<InsertEma
 export async function createUserMemory(data: InsertUserMemory) {
   const db = await getDb();
   if (!db) return null;
-  
-  const result = await db.insert(userMemories).values(data);
-  return result;
+
+  const [inserted] = await db.insert(userMemories).values(data).$returningId();
+  if (!inserted) return null;
+  return await getUserMemoryById(inserted.id, data.userId);
 }
 
 export async function getUserMemoriesByUserId(userId: number) {

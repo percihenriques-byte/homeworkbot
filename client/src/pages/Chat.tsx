@@ -1,16 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Send, Trash2 } from "lucide-react";
+import { Loader2, Plus, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 
 export default function Chat() {
   const { data: conversations, refetch } = trpc.conversations.list.useQuery();
-  const { data: memories } = trpc.memories.list.useQuery();
   const createConvMutation = trpc.conversations.create.useMutation();
   const deleteConvMutation = trpc.conversations.delete.useMutation();
   const sendMessageMutation = trpc.chat.message.useMutation();
@@ -18,35 +16,42 @@ export default function Chat() {
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const selectedConv = conversations?.find(c => c.id === selectedConvId) as any;
+  const messages: any[] = Array.isArray(selectedConv?.messages) ? selectedConv.messages : [];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, selectedConvId, sendMessageMutation.isPending]);
 
   const handleCreateConversation = async () => {
     try {
       const result = await createConvMutation.mutateAsync({});
-      if (result && 'id' in result) {
-        setSelectedConvId(result.id as number);
+      await refetch();
+      if (result && typeof result === "object" && "id" in result && typeof result.id === "number") {
+        setSelectedConvId(result.id);
       }
-      refetch();
       setIsOpen(false);
       toast.success("Conversa criada!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao criar conversa");
     }
   };
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConvId) return;
-
+    if (!messageInput.trim() || !selectedConvId || sendMessageMutation.isPending) return;
+    const outgoing = messageInput;
+    setMessageInput("");
     try {
       await sendMessageMutation.mutateAsync({
         conversationId: selectedConvId,
-        message: messageInput,
+        message: outgoing,
       });
-      setMessageInput("");
-      refetch();
-    } catch (error) {
+      await refetch();
+    } catch {
       toast.error("Erro ao enviar mensagem");
+      setMessageInput(outgoing);
     }
   };
 
@@ -54,22 +59,22 @@ export default function Chat() {
     try {
       await deleteConvMutation.mutateAsync({ id });
       if (selectedConvId === id) setSelectedConvId(null);
-      refetch();
+      await refetch();
       toast.success("Conversa deletada!");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao deletar conversa");
     }
   };
 
   return (
-    <div className="flex gap-6 h-[calc(100vh-200px)] flex-col md:flex-row">
-      <div className="w-full md:w-64 border-r border-border flex flex-col border-b md:border-b-0">
-        <div className="p-4 border-b border-border flex items-center justify-between">
+    <div className="flex gap-4 md:gap-6 h-[calc(100vh-140px)] md:h-[calc(100vh-200px)] flex-col md:flex-row">
+      <div className="w-full md:w-64 md:border-r border-border flex flex-col border-b md:border-b-0 max-h-40 md:max-h-none">
+        <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold">Conversas</h2>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="ghost">
-                <Plus className="w-4 h-4" />
+              <Button size="icon" variant="ghost" className="h-11 w-11" aria-label="Nova conversa">
+                <Plus className="w-5 h-5" />
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -78,30 +83,31 @@ export default function Chat() {
               </DialogHeader>
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">Crie uma nova conversa com o assistente de IA.</p>
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
-                  <Button onClick={handleCreateConversation} disabled={createConvMutation.isPending}>
-                    Criar
+                <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                  <Button variant="outline" onClick={() => setIsOpen(false)} className="min-h-11">Cancelar</Button>
+                  <Button onClick={handleCreateConversation} disabled={createConvMutation.isPending} className="min-h-11">
+                    {createConvMutation.isPending ? "Criando..." : "Criar"}
                   </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
         </div>
-        <div className="flex-1 overflow-y-auto space-y-2 p-4">
+        <div className="flex-1 overflow-y-auto space-y-2 p-3 md:p-4">
           {conversations?.map((conv) => (
             <div
               key={conv.id}
-              className={`p-3 rounded cursor-pointer transition-colors flex items-center justify-between group ${
+              className={`p-3 rounded cursor-pointer transition-colors flex items-center justify-between group min-h-11 ${
                 selectedConvId === conv.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
               }`}
               onClick={() => setSelectedConvId(conv.id)}
             >
-              <span className="truncate flex-1">{conv.title || "Sem título"}</span>
+              <span className="truncate flex-1 break-words">{conv.title || "Sem título"}</span>
               <Button
-                size="sm"
+                size="icon"
                 variant="ghost"
-                className="opacity-0 group-hover:opacity-100"
+                className="h-9 w-9 md:opacity-0 md:group-hover:opacity-100 shrink-0"
+                aria-label="Deletar conversa"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDeleteConversation(conv.id);
@@ -111,53 +117,76 @@ export default function Chat() {
               </Button>
             </div>
           ))}
+          {conversations && conversations.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nenhuma conversa ainda. Clique em + para criar.
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 md:min-h-auto">
+      <div className="flex-1 flex flex-col min-h-0">
         {selectedConv ? (
           <>
             <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4">
-              {selectedConv.messages && Array.isArray(selectedConv.messages) && (selectedConv.messages as any[]).map((msg: any, idx: number) => (
-                <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
-                    {typeof msg.content === "string" ? (
+              {messages.map((msg: any, idx: number) => {
+                const content = typeof msg.content === "string" ? msg.content : String(msg.content ?? "");
+                return (
+                  <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] md:max-w-md px-4 py-2 rounded-lg break-words ${
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-foreground"
+                    }`}>
                       <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <Streamdown>{msg.content}</Streamdown>
+                        <Streamdown>{content}</Streamdown>
                       </div>
-                    ) : (
-                      <p>{JSON.stringify(msg.content)}</p>
-                    )}
+                    </div>
+                  </div>
+                );
+              })}
+              {sendMessageMutation.isPending && (
+                <div className="flex justify-start">
+                  <div className="max-w-[85%] md:max-w-md px-4 py-2 rounded-lg bg-muted text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Pensando...</span>
                   </div>
                 </div>
-              ))}
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
             <div className="border-t border-border p-2 md:p-4 flex gap-2 flex-col md:flex-row">
               <Input
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
                 placeholder="Digite sua mensagem..."
                 disabled={sendMessageMutation.isPending}
-                className="w-full md:flex-1"
+                className="w-full md:flex-1 min-h-11"
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={sendMessageMutation.isPending || !messageInput.trim()}
-                className="w-full md:w-auto"
+                className="w-full md:w-auto min-h-11"
+                aria-label="Enviar mensagem"
               >
-                <Send className="w-4 h-4" />
+                {sendMessageMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            <p>Selecione uma conversa para começar</p>
+          <div className="flex-1 flex items-center justify-center text-muted-foreground p-4 text-center">
+            <p>Selecione uma conversa para começar ou crie uma nova.</p>
           </div>
         )}
       </div>

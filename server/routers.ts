@@ -151,27 +151,15 @@ export const appRouter = router({
         const memories = await db.getUserMemoriesByUserId(ctx.user.id);
         const messages: any[] = (Array.isArray(conv.messages) ? conv.messages : []) || [];
 
-        const content: any[] = [{ type: "text", text: input.message }];
-        if (input.fileUrls) {
-          for (const file of input.fileUrls) {
-            if (file.type === "image") {
-              content.push({
-                type: "image_url",
-                image_url: { url: file.url, detail: "auto" },
-              });
-            } else if (file.type === "document" || file.type === "audio") {
-              content.push({
-                type: "file_url",
-                file_url: {
-                  url: file.url,
-                  mime_type: file.type === "audio" ? "audio/mpeg" : "application/pdf",
-                },
-              });
-            }
-          }
-        }
-
-        messages.push({ role: "user", content: typeof content === 'string' ? content : JSON.stringify(content), timestamp: new Date() });
+        // Guardamos a mensagem do usuário como TEXTO PLANO no histórico —
+        // o array multimodal só é usado na chamada ao LLM abaixo. Isso evita
+        // que o usuário veja JSON bruto ao reabrir a conversa.
+        messages.push({
+          role: "user",
+          content: input.message,
+          attachments: input.fileUrls ?? [],
+          timestamp: new Date(),
+        });
 
         let systemPrompt = `Você é um assistente de estudos inteligente e atencioso. Responda sempre em Português (BR). Ajude o usuário a entender conceitos, resolver problemas passo a passo, criar resumos e estudar de forma eficaz. Seja conciso mas completo, use exemplos práticos quando apropriado.`;
 
@@ -187,22 +175,48 @@ export const appRouter = router({
           systemPrompt += `\n\nUse essas memórias para adaptar seu tom, estilo, abordagem e forma de responder.`;
         }
 
-        const response = await invokeLLM({
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages.map(m => ({ role: m.role, content: m.content })),
-          ],
-        });
+        // Monta o payload multimodal SÓ para a chamada ao LLM.
+        const llmMessages = [
+          { role: "system" as const, content: systemPrompt },
+          ...messages.map((m) => {
+            if (m.role === "user" && Array.isArray(m.attachments) && m.attachments.length > 0) {
+              const parts: any[] = [{ type: "text", text: m.content }];
+              for (const file of m.attachments) {
+                if (file.type === "image") {
+                  parts.push({ type: "image_url", image_url: { url: file.url, detail: "auto" } });
+                } else if (file.type === "document" || file.type === "audio") {
+                  parts.push({
+                    type: "file_url",
+                    file_url: {
+                      url: file.url,
+                      mime_type: file.type === "audio" ? "audio/mpeg" : "application/pdf",
+                    },
+                  });
+                }
+              }
+              return { role: m.role, content: parts };
+            }
+            return { role: m.role, content: m.content };
+          }),
+        ];
 
-        const assistantMessage = response.choices[0]?.message?.content || "";
-        const assistantContent = typeof assistantMessage === 'string' ? assistantMessage : JSON.stringify(assistantMessage);
-        messages.push({ role: "assistant", content: assistantContent, timestamp: new Date() });
+        const response = await invokeLLM({ messages: llmMessages });
+
+        const raw = response.choices[0]?.message?.content;
+        const assistantMessage =
+          typeof raw === "string"
+            ? raw
+            : Array.isArray(raw)
+              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
+              : "";
+
+        messages.push({ role: "assistant", content: assistantMessage, timestamp: new Date() });
 
         await db.updateConversation(input.conversationId, ctx.user.id, { messages });
 
         return {
           conversationId: input.conversationId,
-          message: typeof assistantMessage === 'string' ? assistantMessage : JSON.stringify(assistantMessage),
+          message: assistantMessage,
         };
       }),
   }),
