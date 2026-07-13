@@ -92,9 +92,10 @@ export default function Settings() {
       !integrationData.emailSenderEmail &&
       !integrationData.whatsappPhoneNumber &&
       !integrationData.toddleEmail &&
+      !integrationData.toddleApiKey &&
       !integrationData.gmailUser
     ) {
-      return "Adicione pelo menos um email, telefone, conta Toddle ou Gmail";
+      return "Adicione pelo menos um email, telefone, link do Toddle ou Gmail";
     }
     if (
       (integrationData.gmailUser && !integrationData.gmailAppPassword) ||
