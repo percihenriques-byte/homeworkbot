@@ -596,15 +596,55 @@ function QuizGame({ questions, onClose }: QuizGameProps) {
 
   if (finished) {
     const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+    const badge = pct >= 80 ? "🏆" : pct >= 60 ? "👍" : "📚";
     return (
-      <div className="space-y-4 text-center">
-        <div className="py-6">
-          <p className="text-4xl sm:text-5xl font-bold mb-2">{pct}%</p>
+      <div className="space-y-4">
+        <div className="text-center py-4 border-b border-border">
+          <p className="text-5xl mb-2">{badge}</p>
+          <p className="text-3xl sm:text-4xl font-bold">{pct}%</p>
           <p className="text-muted-foreground">
-            Você acertou {score} de {total} questões
+            {score} de {total} questões corretas
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:justify-center">
+
+        <div className="max-h-64 overflow-y-auto space-y-2">
+          <p className="text-sm font-medium text-muted-foreground mb-2">Revisão:</p>
+          {questions.map((question, i) => {
+            const userAnswer = answers[i];
+            const isCorrect = userAnswer === question.correctAnswer;
+            const skipped = !userAnswer;
+            return (
+              <div
+                key={i}
+                className={`p-3 rounded border text-sm ${
+                  skipped
+                    ? "border-border bg-muted/30"
+                    : isCorrect
+                      ? "border-green-500/40 bg-green-500/5"
+                      : "border-red-500/40 bg-red-500/5"
+                }`}
+              >
+                <p className="font-medium break-words mb-1">
+                  {i + 1}. {question.question}
+                </p>
+                {skipped ? (
+                  <p className="text-xs text-muted-foreground">Não respondida</p>
+                ) : (
+                  <p className={`text-xs ${isCorrect ? "text-green-500" : "text-red-500"}`}>
+                    {isCorrect ? "✓ Correto" : `✗ Sua resposta: ${userAnswer}`}
+                  </p>
+                )}
+                {!isCorrect && !skipped && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Resposta correta: {question.correctAnswer}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 sm:justify-center pt-2 border-t border-border">
           <Button
             variant="outline"
             className="min-h-11"
