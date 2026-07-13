@@ -17,13 +17,7 @@ import {
   Brain,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
-
-const normalize = (v: unknown): string =>
-  String(v ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
+import { normalize } from "@shared/normalize";
 
 export default function Dashboard() {
   const { user } = useAuth();

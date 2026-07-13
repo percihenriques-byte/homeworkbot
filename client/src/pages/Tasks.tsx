@@ -20,6 +20,7 @@ import {
 import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
+import { normalize } from "@shared/normalize";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -203,14 +204,8 @@ export default function Tasks() {
   }
 
   // Ordena por prioridade. Usa `?? 3` (nao `|| 3`) pra que "alta"=0 nao vire 3.
-  // Normaliza a string pra tirar acentos e caixa antes de comparar — evita
-  // que uma variacao inesperada ("Média", "media") fure o mapa.
-  const normalize = (v: unknown): string =>
-    String(v ?? "")
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .trim();
+  // normalize() vem de @shared/normalize — evita variacoes ("Média"/"media"/etc)
+  // furarem o mapa.
   const priorityRank: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
   const allTasks = [...(tasks || [])].sort((a, b) => {
     // Concluídas por último
