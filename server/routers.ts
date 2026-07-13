@@ -87,7 +87,17 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...updates } = input;
-        await db.updateTask(id, ctx.user.id, updates);
+        // Server toca completedAt sozinho quando o status muda pra
+        // concluida. Assim o UI nao precisa mandar timestamp nem lidar
+        // com fuso — o servidor e a fonte da verdade.
+        const patch: any = { ...updates };
+        if (updates.status === "concluída") {
+          patch.completedAt = new Date();
+        } else if (updates.status && updates.status !== "concluída") {
+          // Reabriu a tarefa: limpa o completedAt.
+          patch.completedAt = null;
+        }
+        await db.updateTask(id, ctx.user.id, patch);
         return await db.getTaskById(id, ctx.user.id);
       }),
     delete: protectedProcedure
