@@ -508,8 +508,8 @@ export default function Chat() {
               {sendMessageMutation.isPending && (
                 <div className="flex justify-start">
                   <div className="max-w-[85%] md:max-w-md px-4 py-2 rounded-lg bg-muted text-muted-foreground flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Pensando...</span>
+                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                    <span className="text-sm">Jarvis está planejando e executando...</span>
                   </div>
                 </div>
               )}
