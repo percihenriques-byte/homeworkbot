@@ -639,7 +639,16 @@ export default function Tasks() {
                         setFormData({
                           title: task.title,
                           description: task.description || "",
-                          dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : "",
+                          // datetime-local input espera formato LOCAL "YYYY-MM-DDTHH:mm".
+                          // toISOString() dá UTC — em pt-BR fica 3h atrasado. Usa
+                          // getTimezoneOffset pra ajustar antes do slice.
+                          dueDate: task.dueDate
+                            ? (() => {
+                                const d = new Date(task.dueDate);
+                                const off = d.getTimezoneOffset() * 60000;
+                                return new Date(d.getTime() - off).toISOString().slice(0, 16);
+                              })()
+                            : "",
                           difficulty: task.difficulty as any,
                           priority: task.priority as any,
                           type: task.type as any,
