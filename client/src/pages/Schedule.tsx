@@ -5,7 +5,7 @@ import { Calendar, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Schedule() {
-  const { data: schedule, refetch } = trpc.schedule.get.useQuery();
+  const { data: schedule, isLoading, refetch } = trpc.schedule.get.useQuery();
   const generateMutation = trpc.schedule.generate.useMutation();
 
   const handleGenerate = async () => {
@@ -36,7 +36,11 @@ export default function Schedule() {
         </Button>
       </div>
 
-      {scheduleItems.length > 0 ? (
+      {isLoading ? (
+        <Card className="p-6 sm:p-8 text-center">
+          <p className="text-muted-foreground">Carregando cronograma...</p>
+        </Card>
+      ) : scheduleItems.length > 0 ? (
         <div className="grid gap-4">
           {scheduleItems.map((day: any, idx: number) => (
             <Card key={idx} className="p-4">
