@@ -135,12 +135,12 @@ export default function Settings() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <div className="w-10 h-10 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
-          <SettingsIcon className="w-6 h-6 text-slate-300" />
+        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+          <SettingsIcon className="w-6 h-6 text-muted-foreground" />
         </div>
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">Configurações</h1>
-          <p className="text-sm text-slate-400 break-words">Personalize sua experiência e integrações</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Configurações</h1>
+          <p className="text-sm text-muted-foreground break-words">Personalize sua experiência e integrações</p>
         </div>
       </div>
 
@@ -152,18 +152,18 @@ export default function Settings() {
 
         {/* INTEGRAÇÕES TAB */}
         <TabsContent value="integracao" className="space-y-4">
-          <Card className="bg-slate-800/50 border-slate-700 p-6">
-            <h2 className="font-semibold text-white mb-6">Configuração Rápida</h2>
+          <Card className="bg-card/50 border-border p-6">
+            <h2 className="font-semibold text-foreground mb-6">Configuração Rápida</h2>
 
             <div className="space-y-6">
               {/* Email */}
-              <div className="border-b border-slate-700 pb-6">
+              <div className="border-b border-border pb-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Mail className="w-5 h-5 text-blue-400" />
-                  <h3 className="font-semibold text-white">Email para Receber Tarefas</h3>
+                  <h3 className="font-semibold text-foreground">Email para Receber Tarefas</h3>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">Seu Email</label>
+                  <label className="text-sm font-medium text-foreground">Seu Email</label>
                   <Input
                     type="email"
                     value={integrationData.emailSenderEmail}
@@ -174,22 +174,22 @@ export default function Settings() {
                       })
                     }
                     placeholder="seu@email.com"
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-input border-input text-foreground"
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     Você receberá as tarefas completadas neste email
                   </p>
                 </div>
               </div>
 
               {/* WhatsApp */}
-              <div className="border-b border-slate-700 pb-6">
+              <div className="border-b border-border pb-6">
                 <div className="flex items-center gap-2 mb-4">
                   <MessageSquare className="w-5 h-5 text-green-400" />
-                  <h3 className="font-semibold text-white">WhatsApp para Lembretes</h3>
+                  <h3 className="font-semibold text-foreground">WhatsApp para Lembretes</h3>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">Seu Número WhatsApp</label>
+                  <label className="text-sm font-medium text-foreground">Seu Número WhatsApp</label>
                   <Input
                     value={integrationData.whatsappPhoneNumber}
                     onChange={(e) =>
@@ -199,9 +199,9 @@ export default function Settings() {
                       })
                     }
                     placeholder="+55 11 99999-9999"
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-input border-input text-foreground"
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     Você receberá lembretes de tarefas por WhatsApp
                   </p>
                 </div>
@@ -211,21 +211,21 @@ export default function Settings() {
               <div>
                 <div className="flex items-center gap-2 mb-4">
                   <BookOpen className="w-5 h-5 text-purple-400" />
-                  <h3 className="font-semibold text-white">Toddle/Nordcraft</h3>
+                  <h3 className="font-semibold text-foreground">Toddle/Nordcraft</h3>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-white">Tipo de Toddle</label>
+                    <label className="text-sm font-medium text-foreground">Tipo de Toddle</label>
                     <Select value={integrationData.toddleProvider} onValueChange={(value) =>
                       setIntegrationData({
                         ...integrationData,
                         toddleProvider: value,
                       })
                     }>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white mt-1">
+                      <SelectTrigger className="bg-input border-input text-foreground mt-1">
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectContent className="bg-input border-input">
                         <SelectItem value="Lex Brasil">Lex Brasil</SelectItem>
                         <SelectItem value="Toddle Direct">Toddle Direct</SelectItem>
                         <SelectItem value="Google">Google</SelectItem>
@@ -235,7 +235,7 @@ export default function Settings() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-white">Usuário do Toddle</label>
+                    <label className="text-sm font-medium text-foreground">Usuário do Toddle</label>
                     <Input
                       type="text"
                       value={integrationData.toddleEmail}
@@ -246,11 +246,11 @@ export default function Settings() {
                         })
                       }
                       placeholder="seu_usuario_ou_email@toddle.com"
-                      className="bg-slate-700 border-slate-600 text-white mt-1"
+                      className="bg-input border-input text-foreground mt-1"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-white">Senha do Toddle</label>
+                    <label className="text-sm font-medium text-foreground">Senha do Toddle</label>
                     <div className="relative mt-1">
                       <Input
                         type={showToddlePw ? "text" : "password"}
@@ -262,13 +262,13 @@ export default function Settings() {
                           })
                         }
                         placeholder="Sua senha"
-                        className="bg-slate-700 border-slate-600 text-white pr-12"
+                        className="bg-input border-input text-foreground pr-12"
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-slate-300 hover:text-white"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-muted-foreground hover:text-foreground"
                         onClick={() => setShowToddlePw((v) => !v)}
                         aria-label={showToddlePw ? "Esconder senha" : "Mostrar senha"}
                       >
@@ -276,7 +276,7 @@ export default function Settings() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     Use seu nome de usuário ou email do Toddle. Suas credenciais são criptografadas e usadas apenas para sincronizar com Toddle.
                   </p>
                                 </div>
@@ -284,14 +284,14 @@ export default function Settings() {
             </div>
 
             {/* Gmail Section */}
-            <div className="bg-slate-700 rounded-lg p-4 space-y-4">
+            <div className="bg-muted rounded-lg p-4 space-y-4">
               <div className="flex items-center gap-2 mb-4">
                 <Mail className="w-5 h-5 text-blue-400" />
-                <h3 className="font-semibold text-white">Gmail (Seu Próprio)</h3>
+                <h3 className="font-semibold text-foreground">Gmail (Seu Próprio)</h3>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-white">Email do Gmail</label>
+                  <label className="text-sm font-medium text-foreground">Email do Gmail</label>
                   <Input
                     type="email"
                     value={integrationData.gmailUser}
@@ -302,11 +302,11 @@ export default function Settings() {
                       })
                     }
                     placeholder="seu_email@gmail.com"
-                    className="bg-slate-600 border-slate-500 text-white mt-1"
+                    className="bg-input border-input text-foreground mt-1"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-white">Senha de App do Google</label>
+                  <label className="text-sm font-medium text-foreground">Senha de App do Google</label>
                   <div className="relative mt-1">
                     <Input
                       type={showGmailPw ? "text" : "password"}
@@ -318,13 +318,13 @@ export default function Settings() {
                         })
                       }
                       placeholder="Sua senha de app"
-                      className="bg-slate-600 border-slate-500 text-white pr-12"
+                      className="bg-input border-input text-foreground pr-12"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-slate-300 hover:text-white"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-muted-foreground hover:text-foreground"
                       onClick={() => setShowGmailPw((v) => !v)}
                       aria-label={showGmailPw ? "Esconder senha" : "Mostrar senha"}
                     >
@@ -332,7 +332,7 @@ export default function Settings() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   Gere sua senha de app em <strong>myaccount.google.com → Segurança → Senhas de app</strong>. Suas credenciais são criptografadas e usadas apenas para enviar emails.
                 </p>
               </div>
@@ -374,11 +374,11 @@ export default function Settings() {
 
         {/* AI STYLE TAB */}
         <TabsContent value="ai" className="space-y-4">
-          <Card className="bg-slate-800/50 border-slate-700 p-6">
-            <h2 className="font-semibold text-white mb-4">Estilo Preferido da IA</h2>
+          <Card className="bg-card/50 border-border p-6">
+            <h2 className="font-semibold text-foreground mb-4">Estilo Preferido da IA</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-white mb-2 block">
+                <label className="text-sm font-medium text-foreground mb-2 block">
                   Descreva seu estilo de aprendizado
                 </label>
                 <Textarea
@@ -386,10 +386,10 @@ export default function Settings() {
                   onChange={(e) => setPrefsData({ ...prefsData, aiStyle: e.target.value })}
                   placeholder="Ex: Prefiro explicações concisas com exemplos práticos. Gosto de analogias do mundo real."
                   rows={4}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-input border-input text-foreground"
                 />
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 A IA usará essas informações para adaptar suas respostas ao seu estilo de aprendizado.
               </p>
             </div>

@@ -82,45 +82,45 @@ export default function Memories() {
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-white mb-2 block">Título *</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">Título *</label>
             <Input
               placeholder="Ex: Conversa ChatGPT - Matemática"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="bg-slate-800 border-slate-700 min-h-11"
+              className="bg-input border-input min-h-11"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-white mb-2 block">Categoria</label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Categoria</label>
               <Input
                 placeholder="Ex: Meu estilo de escrita"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="bg-slate-800 border-slate-700 min-h-11"
+                className="bg-input border-input min-h-11"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-white mb-2 block">Fonte</label>
+              <label className="text-sm font-medium text-foreground mb-2 block">Fonte</label>
               <Input
                 placeholder="Ex: ChatGPT, Claude, Gemini"
                 value={formData.source}
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                className="bg-slate-800 border-slate-700 min-h-11"
+                className="bg-input border-input min-h-11"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-white mb-2 block">Conteúdo *</label>
+            <label className="text-sm font-medium text-foreground mb-2 block">Conteúdo *</label>
             <Textarea
               placeholder="Cole a conversa completa ou texto de referência aqui..."
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              className="bg-slate-800 border-slate-700 min-h-40 sm:min-h-64"
+              className="bg-input border-input min-h-40 sm:min-h-64"
             />
-            <p className="text-xs text-slate-400 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               {formData.content.length.toLocaleString("pt-BR")} caracteres
             </p>
           </div>
@@ -146,8 +146,8 @@ export default function Memories() {
             <Brain className="w-6 h-6 text-purple-400" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white break-words">Memórias</h1>
-            <p className="text-sm text-slate-400 break-words">Importe conversas para personalizar sua IA</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Memórias</h1>
+            <p className="text-sm text-muted-foreground break-words">Importe conversas para personalizar sua IA</p>
           </div>
         </div>
         {memories && memories.length > 0 && dialog}
@@ -169,7 +169,7 @@ export default function Memories() {
                 <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
                   <div className="flex-1 min-w-0 w-full">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="font-semibold text-white break-words">{memory.title}</h3>
+                      <h3 className="font-semibold text-foreground break-words">{memory.title}</h3>
                       {memory.source && (
                         <Badge variant="secondary" className="text-xs">
                           {memory.source}
@@ -177,12 +177,12 @@ export default function Memories() {
                       )}
                     </div>
                     {memory.category && (
-                      <p className="text-sm text-slate-400 mb-2 break-words">
+                      <p className="text-sm text-muted-foreground mb-2 break-words">
                         Categoria: {memory.category}
                       </p>
                     )}
-                    <p className="text-sm text-slate-300 line-clamp-2 break-words">{preview}</p>
-                    <p className="text-xs text-slate-500 mt-2">
+                    <p className="text-sm text-foreground/80 line-clamp-2 break-words">{preview}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
                       Criada em {new Date(memory.createdAt).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
@@ -201,10 +201,10 @@ export default function Memories() {
             );
           })
         ) : (
-          <Card className="bg-slate-800/50 border-slate-700 p-6 sm:p-8 text-center">
-            <Brain className="w-12 h-12 text-slate-600 mx-auto mb-4 opacity-50" />
-            <p className="text-slate-400 mb-4">Nenhuma memória adicionada ainda</p>
-            <p className="text-sm text-slate-500 mb-6 break-words">
+          <Card className="bg-card/50 border-border p-6 sm:p-8 text-center">
+            <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <p className="text-muted-foreground mb-4">Nenhuma memória adicionada ainda</p>
+            <p className="text-sm text-muted-foreground mb-6 break-words">
               Importe conversas de outros AIs (ChatGPT, Claude, Gemini) para personalizar sua IA
             </p>
             {dialog}
