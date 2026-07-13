@@ -446,9 +446,9 @@ export const appRouter = router({
     }),
     create: protectedProcedure
       .input(z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        subject: z.string().optional(),
+        name: z.string().min(1, "Nome é obrigatório").max(255),
+        description: z.string().max(2000).optional(),
+        subject: z.string().max(255).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return await db.createFlashcardDeck({
@@ -457,7 +457,7 @@ export const appRouter = router({
         });
       }),
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteFlashcardDeck(input.id, ctx.user.id);
         return { success: true };
