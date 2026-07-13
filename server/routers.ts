@@ -403,7 +403,7 @@ export const appRouter = router({
 
   flashcards: router({
     list: protectedProcedure
-      .input(z.object({ deckId: z.number().optional() }))
+      .input(z.object({ deckId: z.number().int().positive().optional() }))
       .query(async ({ ctx, input }) => {
         if (input.deckId) {
           return await db.getFlashcardsByDeckId(input.deckId, ctx.user.id);
@@ -412,10 +412,10 @@ export const appRouter = router({
       }),
     create: protectedProcedure
       .input(z.object({
-        deckId: z.number().optional(),
-        question: z.string(),
-        answer: z.string(),
-        subject: z.string().optional(),
+        deckId: z.number().int().positive().optional(),
+        question: z.string().min(1, "Pergunta é obrigatória").max(2000),
+        answer: z.string().min(1, "Resposta é obrigatória").max(5000),
+        subject: z.string().max(255).optional(),
         difficulty: z.enum(["fácil", "médio", "difícil"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -425,7 +425,7 @@ export const appRouter = router({
         });
       }),
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteFlashcard(input.id, ctx.user.id);
         return { success: true };
@@ -433,7 +433,7 @@ export const appRouter = router({
     // Registra que o usuário revisou o flashcard. Incrementa timesReviewed
     // e atualiza lastReviewedAt. Endpoint fire-and-forget do StudyDeck.
     review: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         await db.reviewFlashcard(input.id, ctx.user.id);
         return { success: true };
