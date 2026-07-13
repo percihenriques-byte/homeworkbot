@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Image as ImageIcon, Loader2, Paperclip, Pencil, Plus, Send, Trash2, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 
@@ -24,6 +34,7 @@ export default function Chat() {
   const [uploading, setUploading] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -159,10 +170,12 @@ export default function Chat() {
     }
   };
 
-  const handleDeleteConversation = async (id: number) => {
+  const handleDeleteConversation = async () => {
+    if (!deleteConfirm) return;
     try {
-      await deleteConvMutation.mutateAsync({ id });
-      if (selectedConvId === id) setSelectedConvId(null);
+      await deleteConvMutation.mutateAsync({ id: deleteConfirm.id });
+      if (selectedConvId === deleteConfirm.id) setSelectedConvId(null);
+      setDeleteConfirm(null);
       await refetch();
       toast.success("Conversa deletada!");
     } catch {
@@ -252,7 +265,7 @@ export default function Chat() {
                       aria-label="Deletar conversa"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteConversation(conv.id);
+                        setDeleteConfirm({ id: conv.id, title: conv.title || "Sem título" });
                       }}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -415,6 +428,30 @@ export default function Chat() {
           </div>
         )}
       </div>
+
+      <AlertDialog
+        open={deleteConfirm !== null}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar esta conversa?</AlertDialogTitle>
+            <AlertDialogDescription className="break-words">
+              "{deleteConfirm?.title}" será removida junto com todas as mensagens. Não é possível recuperar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConversation}
+              disabled={deleteConvMutation.isPending}
+              className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteConvMutation.isPending ? "Deletando..." : "Sim, deletar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
