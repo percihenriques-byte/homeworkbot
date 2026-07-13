@@ -76,7 +76,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
-          <Toaster richColors closeButton position="top-right" />
+          <Toaster richColors closeButton position="top-right" expand duration={5000} />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
