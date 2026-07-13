@@ -98,6 +98,19 @@ export default function Chat() {
     return "document";
   };
 
+  // Converte Uint8Array em base64 sem estourar o limite de argumentos
+  // do .apply/spread. String.fromCharCode(...bigArray) trava em arquivos
+  // grandes (> ~50k chars nos browsers).
+  const uint8ToBase64 = (bytes: Uint8Array): string => {
+    let binary = "";
+    const chunkSize = 0x8000; // 32KB por vez
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    return btoa(binary);
+  };
+
   const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -110,7 +123,7 @@ export default function Chat() {
           continue;
         }
         const buffer = await file.arrayBuffer();
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        const base64 = uint8ToBase64(new Uint8Array(buffer));
         const res = await uploadMutation.mutateAsync({
           fileName: file.name,
           fileData: base64,
