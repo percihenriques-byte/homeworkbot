@@ -364,11 +364,17 @@ export const appRouter = router({
             `o que foi feito (use ✅ e listas), e sugira o próximo passo. ` +
             `NÃO invente ações que não estão nesta lista.\n\nAções executadas:\n` +
             actions.map((a) => `- ${a}`).join("\n");
-          const reportResp = await invokeLLM({
-            messages: [...llmMessages, { role: "user" as const, content: reportPrompt }],
-          });
-          const reportText = textOf(reportResp.choices[0]?.message?.content).trim();
-          // Se o relatório vier vazio, monta um fallback com as próprias ações.
+          // Robustez: se a chamada do relatório falhar, ainda assim
+          // respondemos com o resumo das ações (nunca engole o que foi feito).
+          let reportText = "";
+          try {
+            const reportResp = await invokeLLM({
+              messages: [...llmMessages, { role: "user" as const, content: reportPrompt }],
+            });
+            reportText = textOf(reportResp.choices[0]?.message?.content).trim();
+          } catch (reportErr) {
+            console.warn("[chat] chamada de relatório falhou, usando resumo das ações:", reportErr);
+          }
           assistantMessage =
             reportText ||
             `Prontinho! Aqui está o que fiz:\n\n${actions.join("\n")}`;
