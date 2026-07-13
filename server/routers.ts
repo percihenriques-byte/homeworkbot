@@ -9,6 +9,7 @@ import { storagePut, resolveExternalUrl } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { sendTestEmail, sendCompletedTaskEmail } from "./email";
 import { extractJson } from "./utils/extractJson";
+import { parseIcs } from "./utils/parseIcs";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
 
 export const appRouter = router({
@@ -882,9 +883,50 @@ export const appRouter = router({
         message:
           "Sincronização automática com Toddle ainda não está disponível para o provedor " +
           (settings.toddleProvider || "configurado") +
-          ". Enquanto isso, crie tarefas manualmente ou aguarde a próxima atualização.",
+          ". Use 'Importar .ics' para trazer as tarefas do calendário exportado.",
       });
     }),
+
+    // Importa tarefas a partir de um arquivo .ics (iCalendar) exportado do
+    // Toddle / Google / Outlook. Sem API externa: o usuário envia o texto
+    // do arquivo e a gente parseia local. Deduplica contra tarefas
+    // existentes por (título + dia do prazo).
+    importIcs: protectedProcedure
+      .input(z.object({ content: z.string().min(1).max(2_000_000, "Arquivo muito grande") }))
+      .mutation(async ({ ctx, input }) => {
+        const events = parseIcs(input.content);
+        if (events.length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Nenhum evento encontrado no arquivo. Confira se é uma exportação de calendário (.ics) válida.",
+          });
+        }
+        const existing = await db.getTasksByUserId(ctx.user.id);
+        const keyOf = (title: string, due: Date | null) =>
+          `${title.trim().toLowerCase()}|${due ? new Date(due).toISOString().slice(0, 10) : ""}`;
+        const seen = new Set(
+          existing.map((t) => keyOf(t.title, t.dueDate ? new Date(t.dueDate) : null))
+        );
+        let imported = 0;
+        let skipped = 0;
+        for (const ev of events) {
+          const key = keyOf(ev.title, ev.dueDate);
+          if (seen.has(key)) {
+            skipped++;
+            continue;
+          }
+          seen.add(key);
+          await db.createTask({
+            userId: ctx.user.id,
+            title: ev.title.slice(0, 255),
+            description: ev.description ? ev.description.slice(0, 5000) : undefined,
+            dueDate: ev.dueDate ?? undefined,
+          });
+          imported++;
+        }
+        return { imported, skipped, total: events.length };
+      }),
   }),
 
   whatsapp: router({
