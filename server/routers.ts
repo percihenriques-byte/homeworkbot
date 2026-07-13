@@ -239,6 +239,20 @@ export const appRouter = router({
           `títulos curtos em negrito quando ajudar. Seja acolhedor e claro (o usuário é um estudante). ` +
           `Sempre em Português (BR). Se o pedido for só uma dúvida conceitual, responda direto e bem, sem inventar plano.`;
 
+        // Data de hoje no prompt: sem isso o agente não consegue converter
+        // "sexta", "amanhã", "semana que vem" na data absoluta certa ao criar
+        // tarefas. Fuso de São Paulo (pt-BR).
+        const hoje = new Date();
+        const hojeStr = hoje.toLocaleDateString("pt-BR", {
+          weekday: "long",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          timeZone: "America/Sao_Paulo",
+        });
+        systemPrompt += `\n\nData de hoje: ${hojeStr} (ISO: ${hoje.toISOString().slice(0, 10)}). ` +
+          `Use isso para converter prazos relativos (ex: "sexta", "amanhã") em datas absolutas (AAAA-MM-DD).`;
+
         if (prefs?.aiStyle) {
           systemPrompt += `\n\nEstilo preferido do usuário: ${prefs.aiStyle}`;
         }
