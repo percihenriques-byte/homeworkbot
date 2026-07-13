@@ -747,6 +747,28 @@ export const appRouter = router({
         days[input.index] = { ...days[input.index], done: input.done };
         return await db.updateLatestStudySchedule(ctx.user.id, days);
       }),
+
+    // Move um dia pra cima/baixo na ordem do cronograma. Botões ↑/↓ em vez
+    // de drag&drop porque o app é mobile-first (drag é ruim em touch).
+    reorderDay: protectedProcedure
+      .input(z.object({ index: z.number().int().min(0), direction: z.enum(["up", "down"]) }))
+      .mutation(async ({ ctx, input }) => {
+        const latest = await db.getLatestStudySchedule(ctx.user.id);
+        if (!latest || !Array.isArray(latest.schedule)) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Nenhum cronograma para reordenar.",
+          });
+        }
+        const days = (latest.schedule as any[]).slice();
+        const target = input.direction === "up" ? input.index - 1 : input.index + 1;
+        // Nas bordas é no-op (não erra, só não move).
+        if (input.index >= days.length || target < 0 || target >= days.length) {
+          return latest;
+        }
+        [days[input.index], days[target]] = [days[target], days[input.index]];
+        return await db.updateLatestStudySchedule(ctx.user.id, days);
+      }),
   }),
 
   upload: router({

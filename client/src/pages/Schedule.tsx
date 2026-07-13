@@ -1,13 +1,14 @@
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Calendar, RefreshCw, CircleCheck, Circle } from "lucide-react";
+import { Calendar, RefreshCw, CircleCheck, Circle, ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Schedule() {
   const { data: schedule, isLoading, refetch } = trpc.schedule.get.useQuery();
   const generateMutation = trpc.schedule.generate.useMutation();
   const setDayDoneMutation = trpc.schedule.setDayDone.useMutation();
+  const reorderDayMutation = trpc.schedule.reorderDay.useMutation();
 
   const handleGenerate = async () => {
     try {
@@ -26,6 +27,15 @@ export default function Schedule() {
       await refetch();
     } catch (error: any) {
       toast.error(error?.message || "Erro ao atualizar o dia");
+    }
+  };
+
+  const handleReorder = async (index: number, direction: "up" | "down") => {
+    try {
+      await reorderDayMutation.mutateAsync({ index, direction });
+      await refetch();
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao reordenar");
     }
   };
 
@@ -85,17 +95,43 @@ export default function Schedule() {
                       </p>
                     )}
                   </div>
-                  <Button
-                    variant={done ? "secondary" : "outline"}
-                    size="sm"
-                    className="gap-2 min-h-11 flex-shrink-0"
-                    onClick={() => handleToggleDay(idx, !done)}
-                    disabled={setDayDoneMutation.isPending}
-                    aria-label={done ? "Marcar dia como não concluído" : "Marcar dia como concluído"}
-                  >
-                    {done ? <CircleCheck className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
-                    <span className="hidden sm:inline">{done ? "Concluído" : "Concluir"}</span>
-                  </Button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <div className="flex flex-col">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleReorder(idx, "up")}
+                        disabled={idx === 0 || reorderDayMutation.isPending}
+                        aria-label="Mover dia para cima"
+                        title="Mover para cima"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleReorder(idx, "down")}
+                        disabled={idx === scheduleItems.length - 1 || reorderDayMutation.isPending}
+                        aria-label="Mover dia para baixo"
+                        title="Mover para baixo"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant={done ? "secondary" : "outline"}
+                      size="sm"
+                      className="gap-2 min-h-11"
+                      onClick={() => handleToggleDay(idx, !done)}
+                      disabled={setDayDoneMutation.isPending}
+                      aria-label={done ? "Marcar dia como não concluído" : "Marcar dia como concluído"}
+                    >
+                      {done ? <CircleCheck className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                      <span className="hidden sm:inline">{done ? "Concluído" : "Concluir"}</span>
+                    </Button>
+                  </div>
                 </div>
               </Card>
             );
