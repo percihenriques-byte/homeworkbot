@@ -20,7 +20,7 @@ import { Streamdown } from "streamdown";
 type Attachment = { name: string; url: string; type: "image" | "document" | "audio" };
 
 export default function Chat() {
-  const { data: conversations, refetch } = trpc.conversations.list.useQuery();
+  const { data: conversations, isLoading: convsLoading, refetch } = trpc.conversations.list.useQuery();
   const createConvMutation = trpc.conversations.create.useMutation();
   const deleteConvMutation = trpc.conversations.delete.useMutation();
   const renameConvMutation = trpc.conversations.rename.useMutation();
@@ -369,7 +369,12 @@ export default function Chat() {
               </div>
             );
           })}
-          {conversations && conversations.length === 0 && (
+          {convsLoading && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Carregando conversas...
+            </p>
+          )}
+          {!convsLoading && conversations && conversations.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
               Nenhuma conversa ainda. Clique em + para criar.
             </p>
