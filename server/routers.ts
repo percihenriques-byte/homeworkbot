@@ -565,17 +565,34 @@ export const appRouter = router({
   upload: router({
     file: protectedProcedure
       .input(z.object({
-        fileName: z.string(),
-        fileData: z.string(),
-        mimeType: z.string(),
+        fileName: z.string().min(1).max(255),
+        fileData: z.string().min(1),
+        mimeType: z.string().max(255),
       }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.fileData, "base64");
-        const fileKey = `${ctx.user.id}-files/${Date.now()}-${input.fileName}`;
-        
+        // Limite server-side (10MB). Frontend ja checa em Chat.tsx, mas
+        // outros clientes (mobile, terceiros usando tRPC direto) podem
+        // ignorar e mandar arquivo enorme — memoria, custo de S3, etc.
+        const MAX_BYTES = 10 * 1024 * 1024;
+        if (buffer.length > MAX_BYTES) {
+          throw new TRPCError({
+            code: "PAYLOAD_TOO_LARGE",
+            message: `Arquivo excede o limite de ${MAX_BYTES / 1024 / 1024}MB.`,
+          });
+        }
+        // Sanitiza fileName: remove path traversal ('/', '\\', '..') e
+        // caracteres perigosos. Mantem espacos e acentos (S3 aceita).
+        const safeName = input.fileName
+          .replace(/[\/\\]/g, "_")
+          .replace(/\.\.+/g, "_")
+          .replace(/[<>:"|?*\x00-\x1f]/g, "_")
+          .slice(0, 200);
+        const fileKey = `${ctx.user.id}-files/${Date.now()}-${safeName}`;
+
         const { key, url } = await storagePut(fileKey, buffer, input.mimeType);
-        
-        return { key, url, fileName: input.fileName };
+
+        return { key, url, fileName: safeName };
       }),
   }),
 
