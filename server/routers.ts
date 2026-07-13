@@ -578,7 +578,11 @@ export const appRouter = router({
           messages: [
             {
               role: "system",
-              content: `Você é um gerador de guias de estudo. Crie um guia bem estruturado em Markdown.`,
+              content:
+                `Você é um gerador de guias de estudo em Português (BR). ` +
+                `Produza um guia bem estruturado em Markdown com títulos (##), subtópicos (###), ` +
+                `listas com marcadores, e seções de "Conceitos-chave", "Exemplos" e "Como estudar". ` +
+                `Não retorne JSON, não use code fence — apenas o Markdown direto do guia.`,
             },
             {
               role: "user",
