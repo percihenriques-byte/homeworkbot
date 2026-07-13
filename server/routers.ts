@@ -456,9 +456,9 @@ export const appRouter = router({
   studyTools: router({
     generateFlashcards: protectedProcedure
       .input(z.object({
-        content: z.string(),
-        subject: z.string().optional(),
-        deckId: z.number().optional(),
+        content: z.string().min(10, "Adicione mais conteúdo (mínimo 10 caracteres)").max(50000),
+        subject: z.string().max(255).optional(),
+        deckId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const response = await invokeLLM({
@@ -499,9 +499,9 @@ export const appRouter = router({
 
     generateQuiz: protectedProcedure
       .input(z.object({
-        content: z.string(),
-        subject: z.string().optional(),
-        questionCount: z.number().default(5),
+        content: z.string().min(10, "Adicione mais conteúdo (mínimo 10 caracteres)").max(50000),
+        subject: z.string().max(255).optional(),
+        questionCount: z.number().int().min(1).max(20).default(5),
       }))
       .mutation(async ({ ctx, input }) => {
         const response = await invokeLLM({
@@ -536,8 +536,8 @@ export const appRouter = router({
 
     generateStudyGuide: protectedProcedure
       .input(z.object({
-        content: z.string(),
-        subject: z.string().optional(),
+        content: z.string().min(10, "Adicione mais conteúdo (mínimo 10 caracteres)").max(50000),
+        subject: z.string().max(255).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const response = await invokeLLM({
