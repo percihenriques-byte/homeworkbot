@@ -253,8 +253,16 @@ export default function Chat() {
                     className="h-8 flex-1 min-w-0"
                   />
                 ) : (
-                  <span className="truncate flex-1 break-words">
-                    {conv.title || "Sem título"}
+                  <span className="truncate flex-1 break-words flex items-center gap-1 min-w-0">
+                    {conv.taskId && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-500 shrink-0"
+                        title="Vinculada a uma tarefa"
+                      >
+                        Tarefa
+                      </span>
+                    )}
+                    <span className="truncate">{conv.title || "Sem título"}</span>
                   </span>
                 )}
                 {!isRenaming && (
