@@ -16,13 +16,23 @@ import Memories from "./pages/Memories";
 import { useAuth } from "./_core/hooks/useAuth";
 
 // Rotas estaveis (evita remounting em cada re-render do Router).
-const DashboardRoute = () => (<DashboardLayout><Dashboard /></DashboardLayout>);
-const TasksRoute = () => (<DashboardLayout><Tasks /></DashboardLayout>);
-const ChatRoute = () => (<DashboardLayout><Chat /></DashboardLayout>);
-const StudyToolsRoute = () => (<DashboardLayout><StudyTools /></DashboardLayout>);
-const ScheduleRoute = () => (<DashboardLayout><Schedule /></DashboardLayout>);
-const MemoriesRoute = () => (<DashboardLayout><Memories /></DashboardLayout>);
-const SettingsRoute = () => (<DashboardLayout><Settings /></DashboardLayout>);
+// Cada uma envelopada em ErrorBoundary compact — se uma pagina quebrar,
+// mostra fallback em vez de derrubar o app inteiro.
+const wrap = (Page: React.ComponentType) => () => (
+  <DashboardLayout>
+    <ErrorBoundary compact>
+      <Page />
+    </ErrorBoundary>
+  </DashboardLayout>
+);
+
+const DashboardRoute = wrap(Dashboard);
+const TasksRoute = wrap(Tasks);
+const ChatRoute = wrap(Chat);
+const StudyToolsRoute = wrap(StudyTools);
+const ScheduleRoute = wrap(Schedule);
+const MemoriesRoute = wrap(Memories);
+const SettingsRoute = wrap(Settings);
 
 const PROTECTED_ROUTES: Array<{ path: string; component: React.ComponentType }> = [
   { path: "/painel", component: DashboardRoute },
