@@ -532,7 +532,13 @@ export const appRouter = router({
   schedule: router({
     generate: protectedProcedure.mutation(async ({ ctx }) => {
       const tasks = await db.getTasksByUserId(ctx.user.id);
-      const pendingTasks = tasks.filter((t) => !t.completedAt);
+      // Considera pendente: sem completedAt E status != "concluída".
+      // Dados antigos (antes do fix "server toca completedAt") podem ter
+      // status concluída mas completedAt null. Checar ambos evita
+      // reincluir na proxima geração.
+      const pendingTasks = tasks.filter(
+        (t) => !t.completedAt && t.status !== "concluída"
+      );
       if (pendingTasks.length === 0) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
