@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -247,7 +248,31 @@ export default function Tasks() {
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center">Carregando tarefas...</div>;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-11 w-32" />
+        </div>
+        <div className="grid gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="bg-card/50 border-border p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-3">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-4 w-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </div>
+                </div>
+                <Skeleton className="h-11 w-11 rounded-md" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // Ordena por prioridade. Usa `?? 3` (nao `|| 3`) pra que "alta"=0 nao vire 3.

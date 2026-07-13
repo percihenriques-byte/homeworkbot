@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,9 +48,11 @@ export default function StudyTools() {
   const deleteQuizMutation = trpc.quizzes.delete.useMutation();
   const deleteGuideMutation = trpc.studyGuides.delete.useMutation();
 
-  const { data: flashcards, refetch: refetchFlashcards } = trpc.flashcards.list.useQuery({});
-  const { data: quizzes, refetch: refetchQuizzes } = trpc.quizzes.list.useQuery();
-  const { data: guides, refetch: refetchGuides } = trpc.studyGuides.list.useQuery();
+  const { data: flashcards, refetch: refetchFlashcards, isLoading: flashcardsLoading } = trpc.flashcards.list.useQuery({});
+  const { data: quizzes, refetch: refetchQuizzes, isLoading: quizzesLoading } = trpc.quizzes.list.useQuery();
+  const { data: guides, refetch: refetchGuides, isLoading: guidesLoading } = trpc.studyGuides.list.useQuery();
+
+  const materialsLoading = flashcardsLoading || quizzesLoading || guidesLoading;
 
   const [content, setContent] = useState("");
   const [subject, setSubject] = useState("");
@@ -254,6 +257,23 @@ export default function StudyTools() {
       <section className="space-y-4">
         <h2 className="text-xl sm:text-2xl font-semibold">Meus Materiais</h2>
 
+        {materialsLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-5 w-8 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-11 w-full rounded" />
+                  <Skeleton className="h-11 w-full rounded" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+        <>
         {/* Flashcards */}
         <Card className="p-4">
           <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
@@ -412,6 +432,8 @@ export default function StudyTools() {
             </ul>
           )}
         </Card>
+        </>
+        )}
       </section>
 
       {/* Modal de estudo dos flashcards */}
