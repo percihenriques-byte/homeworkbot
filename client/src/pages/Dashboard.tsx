@@ -72,6 +72,17 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [tasks]);
 
+  const studyStats = useMemo(() => {
+    const cards = (flashcards ?? []) as any[];
+    const reviews = cards.reduce((sum, c) => sum + (Number(c.timesReviewed) || 0), 0);
+    return {
+      flashcards: cards.length,
+      reviews,
+      conversations: (conversations ?? []).length,
+      memories: (memories ?? []).length,
+    };
+  }, [flashcards, conversations, memories]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -222,6 +233,19 @@ export default function Dashboard() {
         </Card>
       )}
 
+      {/* Estatísticas de estudo — atividade além das tarefas */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Seu estudo
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <StatCard icon={BookOpen} label="Flashcards" value={studyStats.flashcards} color="cyan" />
+          <StatCard icon={Zap} label="Revisões feitas" value={studyStats.reviews} color="amber" />
+          <StatCard icon={MessageSquare} label="Conversas" value={studyStats.conversations} color="green" />
+          <StatCard icon={Brain} label="Memórias" value={studyStats.memories} color="purple" />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Upcoming tasks */}
         <Card className="p-4">
@@ -325,7 +349,7 @@ type StatCardProps = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number | null;
-  color: "blue" | "green" | "red" | "amber";
+  color: "blue" | "green" | "red" | "amber" | "purple" | "cyan";
   highlight?: boolean;
 };
 
@@ -334,6 +358,8 @@ const colorClasses: Record<StatCardProps["color"], string> = {
   green: "text-green-500",
   red: "text-red-500",
   amber: "text-amber-500",
+  purple: "text-purple-400",
+  cyan: "text-cyan-400",
 };
 
 function StatCard({ icon: Icon, label, value, color, highlight }: StatCardProps) {
