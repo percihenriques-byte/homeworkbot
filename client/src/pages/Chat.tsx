@@ -300,10 +300,20 @@ export default function Chat() {
             return (
               <div
                 key={conv.id}
-                className={`p-3 rounded transition-colors flex items-center justify-between group min-h-11 gap-1 ${
+                role={isRenaming ? undefined : "button"}
+                tabIndex={isRenaming ? undefined : 0}
+                aria-current={selectedConvId === conv.id ? "true" : undefined}
+                className={`p-3 rounded transition-colors flex items-center justify-between group min-h-11 gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   selectedConvId === conv.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
                 } ${isRenaming ? "cursor-default" : "cursor-pointer"}`}
                 onClick={() => !isRenaming && setSelectedConvId(conv.id)}
+                onKeyDown={(e) => {
+                  if (isRenaming) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedConvId(conv.id);
+                  }
+                }}
               >
                 {isRenaming ? (
                   <Input
