@@ -843,6 +843,28 @@ export const appRouter = router({
     }),
   }),
 
+  whatsapp: router({
+    // Envio real ainda não implementado. Endpoint existe pra que a UI
+    // consiga oferecer botão "Testar WhatsApp" com feedback claro.
+    // Substitua pelo provider Twilio/similar quando a integração chegar.
+    sendTest: protectedProcedure.mutation(async ({ ctx }) => {
+      const settings = await db.getIntegrationSettings(ctx.user.id);
+      if (!settings?.whatsappPhoneNumber) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Configure seu número de WhatsApp em Configurações antes de testar.",
+        });
+      }
+      // TODO(whatsapp): integrar com provedor (Twilio, Meta WhatsApp API,
+      // ou serviço próprio). Por enquanto, informa que está a caminho.
+      throw new TRPCError({
+        code: "NOT_IMPLEMENTED",
+        message:
+          "Envio via WhatsApp ainda não está disponível. Suas credenciais foram salvas e você receberá lembretes assim que a integração for ativada.",
+      });
+    }),
+  }),
+
   email: router({
     sendTest: protectedProcedure
       .input(z.object({
