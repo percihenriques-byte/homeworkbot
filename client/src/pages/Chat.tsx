@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Image as ImageIcon, Loader2, Paperclip, Pencil, Plus, Send, Trash2, X, Sparkles } from "lucide-react";
 import {
@@ -38,7 +39,14 @@ export default function Chat() {
   const [renameValue, setRenameValue] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Textarea que cresce com o conteúdo (estilo Manus/Jarvis), até um teto.
+  const autoResize = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,6 +106,8 @@ export default function Chat() {
     const outgoingAttachments = pendingAttachments;
     setMessageInput("");
     setPendingAttachments([]);
+    // Volta o textarea pra 1 linha depois de enviar.
+    if (messageInputRef.current) messageInputRef.current.style.height = "auto";
     try {
       const res = await sendMessageMutation.mutateAsync({
         conversationId: selectedConvId,
@@ -436,6 +446,7 @@ export default function Chat() {
                         onClick={() => {
                           setMessageInput(ex);
                           messageInputRef.current?.focus();
+                          autoResize(messageInputRef.current);
                         }}
                         className="w-full text-left text-sm p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-muted transition-colors break-words min-h-11"
                       >
@@ -555,20 +566,25 @@ export default function Chat() {
                     <Paperclip className="w-4 h-4" />
                   )}
                 </Button>
-                <Input
+                <Textarea
                   ref={messageInputRef}
                   value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
+                  rows={1}
+                  onChange={(e) => {
+                    setMessageInput(e.target.value);
+                    autoResize(e.target);
+                  }}
                   onKeyDown={(e) => {
+                    // Enter envia; Shift+Enter quebra linha (estilo Manus).
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
                     }
                   }}
                   onPaste={handlePaste}
-                  placeholder={pendingAttachments.length > 0 ? "Descreva o anexo (opcional)..." : "Digite sua mensagem..."}
+                  placeholder={pendingAttachments.length > 0 ? "Descreva o anexo (opcional)..." : "Peça algo ao Jarvis... (ex: crie uma tarefa e gere flashcards)"}
                   disabled={sendMessageMutation.isPending}
-                  className="w-full md:flex-1 min-h-11"
+                  className="w-full md:flex-1 min-h-11 max-h-40 resize-none"
                 />
                 <Button
                   onClick={handleSendMessage}
