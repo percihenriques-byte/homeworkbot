@@ -379,6 +379,14 @@ export const appRouter = router({
         await db.deleteFlashcard(input.id, ctx.user.id);
         return { success: true };
       }),
+    // Registra que o usuário revisou o flashcard. Incrementa timesReviewed
+    // e atualiza lastReviewedAt. Endpoint fire-and-forget do StudyDeck.
+    review: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.reviewFlashcard(input.id, ctx.user.id);
+        return { success: true };
+      }),
   }),
 
   decks: router({

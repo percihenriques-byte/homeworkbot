@@ -268,8 +268,26 @@ export async function getFlashcardsByDeckId(deckId: number, userId: number) {
 export async function deleteFlashcard(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;
-  
+
   await db.delete(flashcards).where(and(eq(flashcards.id, id), eq(flashcards.userId, userId)));
+}
+
+/**
+ * Incrementa timesReviewed em 1 e atualiza lastReviewedAt para agora.
+ * Usa raw update com sql`` pra evitar race condition entre read+write.
+ */
+export async function reviewFlashcard(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  const { sql } = await import("drizzle-orm");
+  await db
+    .update(flashcards)
+    .set({
+      timesReviewed: sql`${flashcards.timesReviewed} + 1`,
+      lastReviewedAt: new Date(),
+    })
+    .where(and(eq(flashcards.id, id), eq(flashcards.userId, userId)));
 }
 
 // Flashcard Decks

@@ -447,10 +447,22 @@ type StudyDeckProps = {
 
 function StudyDeck({ cards, index, onIndexChange }: StudyDeckProps) {
   const [showAnswer, setShowAnswer] = useState(false);
+  const reviewMutation = trpc.flashcards.review.useMutation();
   const safeIndex = Math.max(0, Math.min(index, cards.length - 1));
   const card = cards[safeIndex];
 
   if (!card) return null;
+
+  const toggleAnswer = () => {
+    const next = !showAnswer;
+    setShowAnswer(next);
+    // Registra revisão quando o usuário revela a resposta pela 1a vez.
+    // Fire-and-forget — não bloqueia a UI, se falhar o toast já mostra
+    // resposta e revisão fica com contador stale.
+    if (next && card?.id) {
+      reviewMutation.mutate({ id: card.id });
+    }
+  };
 
   const goPrev = () => {
     setShowAnswer(false);
@@ -476,7 +488,7 @@ function StudyDeck({ cards, index, onIndexChange }: StudyDeckProps) {
 
       <button
         type="button"
-        onClick={() => setShowAnswer((v) => !v)}
+        onClick={toggleAnswer}
         className="w-full min-h-56 sm:min-h-64 rounded-lg border-2 border-dashed border-border bg-muted/30 hover:bg-muted transition-colors p-6 text-left"
       >
         <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">
