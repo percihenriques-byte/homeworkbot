@@ -10,38 +10,15 @@ import * as db from "./db";
 import { parseIcs } from "./utils/parseIcs";
 import { syncTaskReminder } from "./reminders";
 import { completeAndEmailTask } from "./autoComplete";
+import { isSafeFeedUrl } from "./utils/safeUrl";
+
+export { isSafeFeedUrl };
 
 export type SyncResult = { imported: number; skipped: number; total: number; autoCompleted: number; emailed: number };
 
 // Máximo de tarefas auto-completadas por execução (protege o timeout de 2min
 // do cron; cada uma é uma chamada ao LLM).
 const MAX_AUTO_PER_RUN = 8;
-
-// Guard básico de SSRF: só permite http/https e bloqueia hosts internos.
-// Evita que um link malicioso faça o servidor bater em endereços locais.
-export function isSafeFeedUrl(raw: string): boolean {
-  let u: URL;
-  try {
-    u = new URL(raw);
-  } catch {
-    return false;
-  }
-  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-  const host = u.hostname.toLowerCase();
-  if (
-    host === "localhost" ||
-    host === "0.0.0.0" ||
-    host.endsWith(".local") ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host)
-  ) {
-    return false;
-  }
-  return true;
-}
 
 // Busca o feed, parseia e cria as tarefas novas do usuário. Dedup por
 // (título + dia do prazo) contra as tarefas existentes. Não lança para
