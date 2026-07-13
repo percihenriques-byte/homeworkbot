@@ -13,6 +13,10 @@ import { completeAndEmailTask } from "./autoComplete";
 
 export type SyncResult = { imported: number; skipped: number; total: number; autoCompleted: number; emailed: number };
 
+// Máximo de tarefas auto-completadas por execução (protege o timeout de 2min
+// do cron; cada uma é uma chamada ao LLM).
+const MAX_AUTO_PER_RUN = 8;
+
 // Guard básico de SSRF: só permite http/https e bloqueia hosts internos.
 // Evita que um link malicioso faça o servidor bater em endereços locais.
 export function isSafeFeedUrl(raw: string): boolean {
@@ -108,7 +112,10 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
     imported++;
 
     // Pipeline autônomo: fazer a tarefa com IA e mandar por e-mail.
-    if (autoDo && created) {
+    // Teto por execução: cada uma é uma chamada LLM (~5-15s); o handler do
+    // cron tem limite de 2 min. Acima do teto, a tarefa fica pro usuário
+    // fazer manualmente (botão da IA na tarefa).
+    if (autoDo && created && autoCompleted < MAX_AUTO_PER_RUN) {
       const r = await completeAndEmailTask(userId, created as any);
       if (r.completed) autoCompleted++;
       if (r.emailed) emailed++;
