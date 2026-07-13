@@ -35,6 +35,7 @@ export default function Settings() {
     toddleEmail: "",
     toddlePassword: "",
     toddleProvider: "Lex Brasil",
+    toddleApiKey: "",
     gmailUser: "",
     gmailAppPassword: "",
   });
@@ -67,6 +68,7 @@ export default function Settings() {
         toddleEmail: integrationSettings.toddleEmail || "",
         toddlePassword: integrationSettings.toddlePassword || "",
         toddleProvider: integrationSettings.toddleProvider || "Lex Brasil",
+        toddleApiKey: integrationSettings.toddleApiKey || "",
         gmailUser: integrationSettings.gmailUser || "",
         gmailAppPassword: integrationSettings.gmailAppPassword || "",
       });
@@ -258,8 +260,30 @@ export default function Settings() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                      🔗 Link do calendário (.ics) — sincroniza sozinho
+                    </label>
+                    <Input
+                      type="url"
+                      value={integrationData.toddleApiKey}
+                      onChange={(e) =>
+                        setIntegrationData({
+                          ...integrationData,
+                          toddleApiKey: e.target.value,
+                        })
+                      }
+                      placeholder="https://... (link de assinatura do calendário do Toddle)"
+                      className="bg-input border-input text-foreground mt-1"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2 break-words">
+                      Cole aqui o link de assinatura do calendário do Toddle (ou Google/Outlook). Com ele,
+                      o app busca suas tarefas <strong>automaticamente</strong>, sem você precisar fazer nada.
+                      No Toddle: procure "Assinar calendário" / "Subscribe" / "iCal" e copie o link.
+                    </p>
+                  </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">Usuário do Toddle</label>
+                    <label className="text-sm font-medium text-foreground">Usuário do Toddle <span className="text-muted-foreground">(opcional)</span></label>
                     <Input
                       type="text"
                       value={integrationData.toddleEmail}
