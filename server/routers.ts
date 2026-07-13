@@ -692,6 +692,7 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         emailSenderEmail: z.string().optional(),
+        emailSenderName: z.string().optional(),
         whatsappPhoneNumber: z.string().optional(),
         toddleEmail: z.string().optional(),
         toddlePassword: z.string().optional(),

@@ -28,6 +28,7 @@ export default function Settings() {
 
   const [integrationData, setIntegrationData] = useState({
     emailSenderEmail: "",
+    emailSenderName: "",
     whatsappPhoneNumber: "",
     toddleEmail: "",
     toddlePassword: "",
@@ -59,6 +60,7 @@ export default function Settings() {
     if (integrationSettings) {
       setIntegrationData({
         emailSenderEmail: integrationSettings.emailSenderEmail || "",
+        emailSenderName: integrationSettings.emailSenderName || "",
         whatsappPhoneNumber: integrationSettings.whatsappPhoneNumber || "",
         toddleEmail: integrationSettings.toddleEmail || "",
         toddlePassword: integrationSettings.toddlePassword || "",
@@ -178,6 +180,23 @@ export default function Settings() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Você receberá as tarefas completadas neste email
+                  </p>
+                </div>
+                <div className="space-y-2 mt-4">
+                  <label className="text-sm font-medium text-foreground">Nome do Remetente (opcional)</label>
+                  <Input
+                    value={integrationData.emailSenderName}
+                    onChange={(e) =>
+                      setIntegrationData({
+                        ...integrationData,
+                        emailSenderName: e.target.value,
+                      })
+                    }
+                    placeholder="Como você quer aparecer nos emails"
+                    className="bg-input border-input text-foreground"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se preencher, os emails saem como "Nome &lt;email&gt;". Vazio usa o padrão da conta.
                   </p>
                 </div>
               </div>
