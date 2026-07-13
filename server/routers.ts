@@ -645,10 +645,10 @@ export const appRouter = router({
     }),
     create: protectedProcedure
       .input(z.object({
-        title: z.string(),
-        category: z.string().optional(),
-        content: z.string(),
-        source: z.string().optional(),
+        title: z.string().min(1, "Título é obrigatório").max(255),
+        category: z.string().max(255).optional(),
+        content: z.string().min(1, "Conteúdo é obrigatório").max(200000),
+        source: z.string().max(100).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return await db.createUserMemory({
@@ -659,10 +659,10 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        title: z.string().optional(),
-        category: z.string().optional(),
-        content: z.string().optional(),
-        source: z.string().optional(),
+        title: z.string().min(1).max(255).optional(),
+        category: z.string().max(255).optional(),
+        content: z.string().min(1).max(200000).optional(),
+        source: z.string().max(100).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...updates } = input;
