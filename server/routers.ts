@@ -188,6 +188,12 @@ export const appRouter = router({
         await db.deleteConversation(input.id, ctx.user.id);
         return { success: true };
       }),
+    rename: protectedProcedure
+      .input(z.object({ id: z.number(), title: z.string().min(1).max(255) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateConversation(input.id, ctx.user.id, { title: input.title });
+        return await db.getConversationById(input.id, ctx.user.id);
+      }),
   }),
 
   chat: router({

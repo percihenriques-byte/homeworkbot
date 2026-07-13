@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Image as ImageIcon, Loader2, Paperclip, Plus, Send, Trash2, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, Paperclip, Pencil, Plus, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 
@@ -13,6 +13,7 @@ export default function Chat() {
   const { data: conversations, refetch } = trpc.conversations.list.useQuery();
   const createConvMutation = trpc.conversations.create.useMutation();
   const deleteConvMutation = trpc.conversations.delete.useMutation();
+  const renameConvMutation = trpc.conversations.rename.useMutation();
   const sendMessageMutation = trpc.chat.message.useMutation();
   const uploadMutation = trpc.upload.file.useMutation();
 
@@ -21,9 +22,12 @@ export default function Chat() {
   const [isOpen, setIsOpen] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const selectedConv = conversations?.find(c => c.id === selectedConvId) as any;
   const messages: any[] = Array.isArray(selectedConv?.messages) ? selectedConv.messages : [];
@@ -123,6 +127,38 @@ export default function Chat() {
     setPendingAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const startRename = (conv: any) => {
+    setRenamingId(conv.id);
+    setRenameValue(conv.title || "");
+    setTimeout(() => {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    }, 0);
+  };
+
+  const cancelRename = () => {
+    setRenamingId(null);
+    setRenameValue("");
+  };
+
+  const commitRename = async () => {
+    if (renamingId === null) return;
+    const newTitle = renameValue.trim();
+    if (!newTitle) {
+      cancelRename();
+      return;
+    }
+    try {
+      await renameConvMutation.mutateAsync({ id: renamingId, title: newTitle });
+      await refetch();
+      toast.success("Conversa renomeada");
+    } catch {
+      toast.error("Erro ao renomear");
+    } finally {
+      cancelRename();
+    }
+  };
+
   const handleDeleteConversation = async (id: number) => {
     try {
       await deleteConvMutation.mutateAsync({ id });
@@ -162,29 +198,70 @@ export default function Chat() {
           </Dialog>
         </div>
         <div className="flex-1 overflow-y-auto space-y-2 p-3 md:p-4">
-          {conversations?.map((conv) => (
-            <div
-              key={conv.id}
-              className={`p-3 rounded cursor-pointer transition-colors flex items-center justify-between group min-h-11 ${
-                selectedConvId === conv.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-              }`}
-              onClick={() => setSelectedConvId(conv.id)}
-            >
-              <span className="truncate flex-1 break-words">{conv.title || "Sem título"}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 md:opacity-0 md:group-hover:opacity-100 shrink-0"
-                aria-label="Deletar conversa"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteConversation(conv.id);
-                }}
+          {conversations?.map((conv) => {
+            const isRenaming = renamingId === conv.id;
+            return (
+              <div
+                key={conv.id}
+                className={`p-3 rounded transition-colors flex items-center justify-between group min-h-11 gap-1 ${
+                  selectedConvId === conv.id ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                } ${isRenaming ? "cursor-default" : "cursor-pointer"}`}
+                onClick={() => !isRenaming && setSelectedConvId(conv.id)}
               >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))}
+                {isRenaming ? (
+                  <Input
+                    ref={renameInputRef}
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitRename();
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        cancelRename();
+                      }
+                    }}
+                    onBlur={commitRename}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-8 flex-1 min-w-0"
+                  />
+                ) : (
+                  <span className="truncate flex-1 break-words">
+                    {conv.title || "Sem título"}
+                  </span>
+                )}
+                {!isRenaming && (
+                  <div className="flex items-center gap-0 shrink-0">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="Renomear conversa"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startRename(conv);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-9 w-9 md:opacity-0 md:group-hover:opacity-100"
+                      aria-label="Deletar conversa"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteConversation(conv.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           {conversations && conversations.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">
               Nenhuma conversa ainda. Clique em + para criar.
