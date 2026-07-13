@@ -7,7 +7,7 @@ import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { storagePut } from "./storage";
 import { TRPCError } from "@trpc/server";
-import { sendTestEmail } from "./email";
+import { sendTestEmail, sendCompletedTaskEmail } from "./email";
 import { extractJson } from "./utils/extractJson";
 
 export const appRouter = router({
@@ -797,7 +797,6 @@ export const appRouter = router({
           });
         }
 
-        const { sendCompletedTaskEmail } = await import("./email");
         return await sendCompletedTaskEmail(
           settings.emailSenderEmail,
           task.title,
