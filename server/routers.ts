@@ -49,14 +49,14 @@ export const appRouter = router({
     }),
     create: protectedProcedure
       .input(z.object({
-        title: z.string(),
-        description: z.string().optional(),
+        title: z.string().min(1, "Título é obrigatório").max(255),
+        description: z.string().max(2000).optional(),
         dueDate: z.date().optional(),
         difficulty: z.enum(["fácil", "médio", "difícil"]).optional(),
         priority: z.enum(["baixa", "média", "alta"]).optional(),
         type: z.enum(["tarefa", "trabalho", "prova", "projeto", "leitura"]).optional(),
-        subject: z.string().optional(),
-        notes: z.string().optional(),
+        subject: z.string().max(255).optional(),
+        notes: z.string().max(5000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const result = await db.createTask({
@@ -74,17 +74,17 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        title: z.string().optional(),
-        description: z.string().optional(),
+        title: z.string().min(1).max(255).optional(),
+        description: z.string().max(2000).optional(),
         // dueDate accepts Date to set, null to clear, undefined to leave alone.
         dueDate: z.date().nullable().optional(),
         difficulty: z.enum(["fácil", "médio", "difícil"]).optional(),
         priority: z.enum(["baixa", "média", "alta"]).optional(),
         status: z.enum(["pendente", "em_progresso", "concluída", "atrasada"]).optional(),
         type: z.enum(["tarefa", "trabalho", "prova", "projeto", "leitura"]).optional(),
-        subject: z.string().optional(),
-        notes: z.string().optional(),
-        completedContent: z.string().optional(),
+        subject: z.string().max(255).optional(),
+        notes: z.string().max(5000).optional(),
+        completedContent: z.string().max(50000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...updates } = input;
