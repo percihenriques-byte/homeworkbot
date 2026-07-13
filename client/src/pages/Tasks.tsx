@@ -37,6 +37,7 @@ export default function Tasks() {
   const completeTaskMutation = trpc.chat.completeTask.useMutation();
   const sendCompletedEmailMutation = trpc.email.sendCompletedTask.useMutation();
   const createConvMutation = trpc.conversations.create.useMutation();
+  const utils = trpc.useUtils();
   const [toddleConnected, setToddleConnected] = useState(false);
   const [aiResult, setAiResult] = useState<{ taskId: number; taskTitle: string; content: string } | null>(null);
   // ID vindo do deep-link (?highlight=) — usado pra rolar até a tarefa e
@@ -299,11 +300,25 @@ export default function Tasks() {
   const handleToggleComplete = async (task: any) => {
     const currentStatus = normalize(task.status);
     const newStatus = currentStatus === "concluida" ? "pendente" : "concluída";
+    // Optimistic update: reflete a mudança no cache na hora, sem esperar o
+    // round-trip. Se o server falhar, faz rollback pro estado anterior.
+    await utils.tasks.list.cancel();
+    const prev = utils.tasks.list.getData();
+    utils.tasks.list.setData(undefined, (old: any) =>
+      Array.isArray(old)
+        ? old.map((t: any) =>
+            t.id === task.id
+              ? { ...t, status: newStatus, completedAt: newStatus === "concluída" ? new Date() : null }
+              : t
+          )
+        : old
+    );
     try {
       await updateTaskMutation.mutateAsync({ id: task.id, status: newStatus as any });
       toast.success(newStatus === "concluída" ? "Tarefa concluída!" : "Tarefa reaberta");
-      refetch();
+      utils.tasks.list.invalidate();
     } catch (error: any) {
+      utils.tasks.list.setData(undefined, prev);
       toast.error(error?.message || "Erro ao atualizar status");
     }
   };
