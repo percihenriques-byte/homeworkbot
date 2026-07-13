@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare, RotateCcw, CopyPlus } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare, RotateCcw, CopyPlus, MessageCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { normalize } from "@shared/normalize";
@@ -94,6 +94,21 @@ export default function Tasks() {
     } catch (error: any) {
       toast.error(error?.message || "Erro ao importar o arquivo .ics");
     }
+  };
+
+  // Gera um link wa.me (click-to-chat) com o lembrete pronto. Sem API:
+  // apenas abre o WhatsApp do próprio usuário com a mensagem preenchida —
+  // o envio é feito por ele. Se não houver número configurado, o WhatsApp
+  // deixa escolher o contato.
+  const handleWhatsappReminder = (task: any) => {
+    const phone = String(integrationSettings?.whatsappPhoneNumber || "").replace(/\D/g, "");
+    const due = task.dueDate ? new Date(task.dueDate).toLocaleDateString("pt-BR") : "sem prazo";
+    const msg =
+      `📚 Lembrete de tarefa: ${task.title}` +
+      (task.subject ? ` (${task.subject})` : "") +
+      `\nPrazo: ${due}`;
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleToddleSync = async () => {
@@ -759,6 +774,16 @@ export default function Tasks() {
                           disabled={completeTaskMutation.isPending}
                         >
                           <Sparkles className="w-4 h-4 text-purple-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11"
+                          aria-label="Enviar lembrete pelo WhatsApp"
+                          title="Enviar lembrete pelo WhatsApp"
+                          onClick={() => handleWhatsappReminder(task)}
+                        >
+                          <MessageCircle className="w-4 h-4 text-green-500" />
                         </Button>
                       </>
                     )}
