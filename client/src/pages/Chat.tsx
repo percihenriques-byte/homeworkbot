@@ -32,6 +32,7 @@ export default function Chat() {
   const [isOpen, setIsOpen] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
@@ -111,13 +112,13 @@ export default function Chat() {
     return btoa(binary);
   };
 
-  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const processFiles = async (files: FileList | File[]) => {
+    const arr = Array.from(files);
+    if (arr.length === 0) return;
     setUploading(true);
     try {
       const uploaded: Attachment[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of arr) {
         if (file.size > 10 * 1024 * 1024) {
           toast.error(`"${file.name}" excede 10MB e foi ignorado`);
           continue;
@@ -143,7 +144,26 @@ export default function Chat() {
       toast.error(error?.message || "Erro ao enviar arquivo");
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFilePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    await processFiles(files);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!selectedConvId) {
+      toast.error("Selecione uma conversa antes de anexar arquivos");
+      return;
+    }
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      await processFiles(files);
     }
   };
 
@@ -197,7 +217,23 @@ export default function Chat() {
   };
 
   return (
-    <div className="flex gap-4 md:gap-6 h-[calc(100vh-140px)] md:h-[calc(100vh-200px)] flex-col md:flex-row">
+    <div
+      className={`flex gap-4 md:gap-6 h-[calc(100vh-140px)] md:h-[calc(100vh-200px)] flex-col md:flex-row relative ${isDragging ? "ring-2 ring-primary ring-offset-2 rounded-lg" : ""}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (selectedConvId && !isDragging) setIsDragging(true);
+      }}
+      onDragLeave={(e) => {
+        // Só cancela se saiu do container inteiro (não para um filho)
+        if (e.currentTarget === e.target) setIsDragging(false);
+      }}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-primary/10 rounded-lg border-2 border-dashed border-primary pointer-events-none">
+          <p className="font-semibold text-primary">Solte para anexar</p>
+        </div>
+      )}
       <div className="w-full md:w-64 md:border-r border-border flex flex-col border-b md:border-b-0 max-h-40 md:max-h-none">
         <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold">Conversas</h2>
