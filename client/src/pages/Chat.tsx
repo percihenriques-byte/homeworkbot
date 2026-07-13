@@ -304,6 +304,8 @@ export default function Chat() {
                     onBlur={commitRename}
                     onClick={(e) => e.stopPropagation()}
                     className="h-8 flex-1 min-w-0"
+                    aria-label="Novo nome da conversa"
+                    maxLength={255}
                   />
                 ) : (
                   <span className="truncate flex-1 break-words flex items-center gap-1 min-w-0">
