@@ -255,8 +255,11 @@ export default function Chat() {
     <div
       className={`flex gap-4 md:gap-6 h-[calc(100vh-140px)] md:h-[calc(100vh-200px)] flex-col md:flex-row relative ${isDragging ? "ring-2 ring-primary ring-offset-2 rounded-lg" : ""}`}
       onDragOver={(e) => {
+        // Só ativa dropzone se ha conv selecionada — evita mostrar
+        // overlay quando o usuario ainda nem escolheu conversa.
+        if (!selectedConvId) return;
         e.preventDefault();
-        if (selectedConvId && !isDragging) setIsDragging(true);
+        if (!isDragging) setIsDragging(true);
       }}
       onDragLeave={(e) => {
         // Só cancela se saiu do container inteiro (não para um filho)
