@@ -502,6 +502,22 @@ export default function Tasks() {
                             {task.difficulty}
                           </span>
                         )}
+                        {task.completedContent && (
+                          <button
+                            className="px-2 py-1 rounded text-xs font-medium bg-purple-500/10 text-purple-500 flex items-center gap-1 hover:bg-purple-500/20 transition-colors"
+                            title="Ver conteúdo gerado pela IA"
+                            onClick={() =>
+                              setAiResult({
+                                taskId: task.id,
+                                taskTitle: task.title,
+                                content: task.completedContent!,
+                              })
+                            }
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            IA
+                          </button>
+                        )}
                       </div>
                       {task.description && <p className="text-sm text-muted-foreground mb-2 break-words">{task.description}</p>}
                       <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
