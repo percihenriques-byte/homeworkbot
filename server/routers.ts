@@ -12,6 +12,7 @@ import { extractJson } from "./utils/extractJson";
 import { parseIcs } from "./utils/parseIcs";
 import { syncTaskReminder } from "./reminders";
 import { AGENT_TOOLS, executeAgentTool } from "./agentTools";
+import { syncToddleForUser } from "./toddleSync";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
 
 export const appRouter = router({
@@ -975,6 +976,9 @@ export const appRouter = router({
         toddleEmail: z.string().max(320).optional(),
         toddlePassword: z.string().max(500).optional(),
         toddleProvider: z.string().max(100).optional(),
+        // Reusa a coluna toddleApiKey (já existe na tabela) para guardar o
+        // LINK do calendário .ics do Toddle. Com ele, a sync roda sozinha.
+        toddleApiKey: z.union([z.literal(""), z.string().max(2048)]).optional(),
         gmailUser: z.union([z.literal(""), z.string().email({ message: "Formato de email inválido" })]).optional(),
         gmailAppPassword: z.string().max(500).optional(),
       }))
@@ -984,27 +988,26 @@ export const appRouter = router({
   }),
 
   toddle: router({
-    // Sync real ainda não implementado. Endpoint existe pra que o botão
-    // "Sincronizar" tenha um destino de verdade — retorna erro claro em
-    // vez de fingir sucesso. Assim que o parser do Toddle estiver pronto,
-    // é só substituir o corpo deste handler.
+    // Sincroniza AGORA a partir do link de calendário (.ics) salvo. Mesma
+    // lógica que o cron roda sozinho — aqui é o disparo manual do botão.
     sync: protectedProcedure.mutation(async ({ ctx }) => {
       const settings = await db.getIntegrationSettings(ctx.user.id);
-      if (!settings?.toddleEmail || !settings?.toddlePassword) {
+      const feedUrl = (settings?.toddleApiKey || "").trim();
+      if (!feedUrl) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Configure suas credenciais do Toddle em Configurações antes de sincronizar.",
+          message:
+            "Cole o link do calendário (.ics) do Toddle em Configurações → Toddle para sincronizar automaticamente.",
         });
       }
-      // TODO(toddle-sync): implementar autenticação e parser das tarefas
-      // por provedor (Lex Brasil, Toddle Direct, Google, Microsoft).
-      throw new TRPCError({
-        code: "NOT_IMPLEMENTED",
-        message:
-          "Sincronização automática com Toddle ainda não está disponível para o provedor " +
-          (settings.toddleProvider || "configurado") +
-          ". Use 'Importar .ics' para trazer as tarefas do calendário exportado.",
-      });
+      try {
+        return await syncToddleForUser(ctx.user.id);
+      } catch (err: any) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: String(err?.message ?? "Falha ao sincronizar com o calendário."),
+        });
+      }
     }),
 
     // Importa tarefas a partir de um arquivo .ics (iCalendar) exportado do

@@ -512,6 +512,18 @@ export async function getIntegrationSettings(userId: number) {
   return result.length > 0 ? result[0] : null;
 }
 
+// Usuários que têm um link de calendário (.ics) configurado — usado pelo
+// cron de sincronização automática do Toddle. toddleApiKey guarda o link.
+export async function getUsersWithToddleFeed(): Promise<{ userId: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.select().from(integrationSettings);
+  return rows
+    .filter((r) => typeof r.toddleApiKey === "string" && r.toddleApiKey.trim().length > 0)
+    .map((r) => ({ userId: r.userId }));
+}
+
 export async function createOrUpdateIntegrationSettings(userId: number, data: Partial<InsertIntegrationSettings>) {
   try {
     const db = await getDb();

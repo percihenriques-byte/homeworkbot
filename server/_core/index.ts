@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerReminderRoutes } from "../reminders";
+import { registerToddleSyncRoute } from "../toddleSync";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -40,6 +41,8 @@ async function startServer() {
   // Rota de callback do cron de lembretes (/api/scheduled/send-reminders).
   // Precisa vir antes do fallthrough do Vite/estático (não é auto-registrada).
   registerReminderRoutes(app);
+  // Sincronização automática do Toddle (/api/scheduled/sync-toddle).
+  registerToddleSyncRoute(app);
   // tRPC API
   app.use(
     "/api/trpc",
