@@ -412,8 +412,8 @@ export default function Tasks() {
         <Card className="bg-amber-500/10 border-amber-500/30 p-4 flex items-start gap-3 flex-wrap">
           <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground mb-1">Conecte sua conta Toddle</p>
-            <p className="text-sm text-muted-foreground break-words">Configure suas credenciais do Toddle em Configurações para sincronizar automaticamente suas tarefas e atribuições.</p>
+            <p className="font-medium text-foreground mb-1">Sincronize com o Toddle automaticamente</p>
+            <p className="text-sm text-muted-foreground break-words">Cole o link do calendário (.ics) do Toddle em Configurações → Toddle. Aí o app busca suas tarefas sozinho.</p>
           </div>
         </Card>
       )}
@@ -422,9 +422,9 @@ export default function Tasks() {
         <Card className="bg-green-500/10 border-green-500/30 p-4 flex items-start gap-3 flex-wrap">
           <Zap className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground">Credenciais Toddle salvas</p>
+            <p className="font-medium text-foreground">Toddle conectado</p>
             <p className="text-sm text-muted-foreground break-words">
-              Suas credenciais estão prontas. Clique em "Sincronizar" para importar tarefas do Toddle.
+              Tudo pronto. Clique em "Sincronizar" para buscar suas tarefas agora (ou deixe o app buscar sozinho).
             </p>
           </div>
           <Button
