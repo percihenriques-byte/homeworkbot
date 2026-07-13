@@ -248,10 +248,11 @@ export default function Dashboard() {
                 const overdueOrSoon =
                   new Date(t.dueDate!).getTime() < Date.now() + 24 * 60 * 60 * 1000;
                 return (
-                  <li
-                    key={t.id}
-                    className="p-3 rounded bg-muted/50 flex items-start justify-between gap-2 flex-wrap"
-                  >
+                  <li key={t.id}>
+                    <button
+                      onClick={() => navigate("/tarefas")}
+                      className="w-full p-3 rounded bg-muted/50 hover:bg-muted flex items-start justify-between gap-2 flex-wrap text-left transition-colors min-h-11"
+                    >
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm break-words">{t.title}</p>
                       {t.subject && (
@@ -266,6 +267,7 @@ export default function Dashboard() {
                     >
                       {new Date(t.dueDate!).toLocaleDateString("pt-BR")}
                     </Badge>
+                    </button>
                   </li>
                 );
               })}
