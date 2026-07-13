@@ -621,6 +621,12 @@ export const appRouter = router({
       const scheduleData = {
         schedule: Array.isArray(parsed?.schedule) ? parsed.schedule : [],
       };
+      if (scheduleData.schedule.length === 0) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "A IA não conseguiu gerar um cronograma dessa vez. Tente novamente.",
+        });
+      }
 
       return await db.createStudySchedule({
         userId: ctx.user.id,
