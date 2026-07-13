@@ -849,10 +849,14 @@ export const appRouter = router({
     // Substitua pelo provider Twilio/similar quando a integração chegar.
     sendTest: protectedProcedure.mutation(async ({ ctx }) => {
       const settings = await db.getIntegrationSettings(ctx.user.id);
-      if (!settings?.whatsappPhoneNumber) {
+      const phone = settings?.whatsappPhoneNumber?.trim();
+      // Precisa de pelo menos 8 digitos (mais curto que qualquer numero
+      // real internacional). Aceita "+", espacos e dashes na entrada.
+      const digits = phone?.replace(/\D/g, "") ?? "";
+      if (!phone || digits.length < 8) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Configure seu número de WhatsApp em Configurações antes de testar.",
+          message: "Configure um número de WhatsApp válido em Configurações antes de testar.",
         });
       }
       // TODO(whatsapp): integrar com provedor (Twilio, Meta WhatsApp API,
