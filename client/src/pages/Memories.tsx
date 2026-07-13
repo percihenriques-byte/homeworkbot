@@ -33,7 +33,7 @@ export default function Memories() {
   const [formData, setFormData] = useState<MemoryFormData>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
 
-  const { data: memories, refetch } = trpc.memories.list.useQuery();
+  const { data: memories, isLoading, refetch } = trpc.memories.list.useQuery();
   const createMutation = trpc.memories.create.useMutation();
   const deleteMutation = trpc.memories.delete.useMutation();
 
@@ -154,7 +154,11 @@ export default function Memories() {
       </div>
 
       <div className="grid gap-4">
-        {memories && memories.length > 0 ? (
+        {isLoading ? (
+          <Card className="bg-card/50 border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">Carregando memórias...</p>
+          </Card>
+        ) : memories && memories.length > 0 ? (
           memories.map((memory: any) => {
             const rawContent = String(memory.content ?? "");
             const preview =
