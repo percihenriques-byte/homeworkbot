@@ -128,7 +128,17 @@ export const AGENT_TOOLS = [
 
 function toDateOrUndefined(value: unknown): Date | undefined {
   if (typeof value !== "string" || !value.trim()) return undefined;
-  const d = new Date(value);
+  const v = value.trim();
+  // Data pura "AAAA-MM-DD": `new Date("2026-07-18")` seria meia-noite UTC,
+  // que em pt-BR (UTC-3) exibe como o dia ANTERIOR. Fixamos no MEIO-DIA
+  // local pra o prazo cair no dia certo em qualquer fuso do Brasil.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (dateOnly) {
+    const [, y, mo, d] = dateOnly;
+    const dt = new Date(Number(y), Number(mo) - 1, Number(d), 12, 0, 0);
+    return Number.isFinite(dt.getTime()) ? dt : undefined;
+  }
+  const d = new Date(v);
   return Number.isFinite(d.getTime()) ? d : undefined;
 }
 
