@@ -54,12 +54,12 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
       "Nenhum link de calendário configurado. Cole o link .ics do Toddle em Configurações."
     );
   }
-  if (!isSafeFeedUrl(feedUrl)) {
+  // webcal:// é comum em links de assinatura — troca por https ANTES de
+  // validar (senão o guard rejeitaria o esquema webcal).
+  const fetchUrl = feedUrl.replace(/^webcal:\/\//i, "https://");
+  if (!isSafeFeedUrl(fetchUrl)) {
     throw new Error("O link do calendário é inválido. Use um endereço http(s) público do feed .ics.");
   }
-
-  // webcal:// é comum em links de assinatura — troca por https.
-  const fetchUrl = feedUrl.replace(/^webcal:\/\//i, "https://");
 
   let text = "";
   try {
