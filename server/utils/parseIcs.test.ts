@@ -95,4 +95,56 @@ describe("parseIcs", () => {
     expect(parseIcs("")).toEqual([]);
     expect(parseIcs("qualquer texto sem eventos")).toEqual([]);
   });
+
+  it("parseia um calendário realista (Google/Outlook: VTIMEZONE, TZID, X-props)", () => {
+    // VTIMEZONE não tem SUMMARY → deve ser ignorado. DTSTART;TZID e props X-
+    // não podem atrapalhar. Deve extrair só os 2 VEVENTs com título.
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "PRODID:-//Google Inc//Google Calendar 70.9054//EN",
+      "VERSION:2.0",
+      "CALSCALE:GREGORIAN",
+      "BEGIN:VTIMEZONE",
+      "TZID:America/Sao_Paulo",
+      "BEGIN:STANDARD",
+      "TZOFFSETFROM:-0300",
+      "TZOFFSETTO:-0300",
+      "TZNAME:-03",
+      "DTSTART:19700101T000000",
+      "END:STANDARD",
+      "END:VTIMEZONE",
+      "BEGIN:VEVENT",
+      "DTSTART;TZID=America/Sao_Paulo:20260717T140000",
+      "DTEND;TZID=America/Sao_Paulo:20260717T150000",
+      "DTSTAMP:20260713T120000Z",
+      "UID:abc123@google.com",
+      "CREATED:20260701T100000Z",
+      "DESCRIPTION:Estudar capitulos 3 e 4",
+      "LAST-MODIFIED:20260701T100000Z",
+      "SEQUENCE:0",
+      "STATUS:CONFIRMED",
+      "SUMMARY:Prova de Historia",
+      "TRANSP:OPAQUE",
+      "X-GOOGLE-CONFERENCE:ignore",
+      "END:VEVENT",
+      "BEGIN:VEVENT",
+      "DTSTART;VALUE=DATE:20260720",
+      "DTEND;VALUE=DATE:20260721",
+      "UID:def456@google.com",
+      "SUMMARY:Entregar trabalho de Geografia",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const events = parseIcs(ics);
+    expect(events).toHaveLength(2);
+    expect(events[0].title).toBe("Prova de Historia");
+    expect(events[0].description).toBe("Estudar capitulos 3 e 4");
+    // DTSTART;TZID=... → pega o valor após o ':' (o parser trata como local).
+    expect(events[0].dueDate?.getFullYear()).toBe(2026);
+    expect(events[0].dueDate?.getMonth()).toBe(6); // julho
+    expect(events[0].dueDate?.getDate()).toBe(17);
+    expect(events[1].title).toBe("Entregar trabalho de Geografia");
+    expect(events[1].dueDate?.getDate()).toBe(20);
+  });
 });
