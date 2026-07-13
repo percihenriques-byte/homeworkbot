@@ -5,7 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
-import { storagePut } from "./storage";
+import { storagePut, resolveExternalUrl } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { sendTestEmail, sendCompletedTaskEmail } from "./email";
 import { extractJson } from "./utils/extractJson";
@@ -252,14 +252,18 @@ export const appRouter = router({
         const contextMessages = messages.slice(-MAX_CONTEXT_MESSAGES);
 
         // Monta o payload multimodal SÓ para a chamada ao LLM.
-        const llmMessages = [
-          { role: "system" as const, content: systemPrompt },
-          ...contextMessages.map((m) => {
+        // As URLs dos anexos ficam salvas como path relativo /manus-storage/,
+        // que só resolve no host do Manus. O provedor do LLM baixa a URL do
+        // seu próprio servidor, então resolvemos cada anexo para uma URL
+        // absoluta pré-assinada (resolveExternalUrl) antes de enviar.
+        const mappedMessages = await Promise.all(
+          contextMessages.map(async (m) => {
             if (m.role === "user" && Array.isArray(m.attachments) && m.attachments.length > 0) {
               const parts: any[] = [{ type: "text", text: m.content }];
               for (const file of m.attachments) {
+                const externalUrl = await resolveExternalUrl(file.url);
                 if (file.type === "image") {
-                  parts.push({ type: "image_url", image_url: { url: file.url, detail: "auto" } });
+                  parts.push({ type: "image_url", image_url: { url: externalUrl, detail: "auto" } });
                 } else if (file.type === "document" || file.type === "audio") {
                   // Usa o mime real do arquivo quando disponível (.wav, .ogg,
                   // .docx, etc). Só cai no genérico por tipo se o anexo antigo
@@ -268,7 +272,7 @@ export const appRouter = router({
                   parts.push({
                     type: "file_url",
                     file_url: {
-                      url: file.url,
+                      url: externalUrl,
                       mime_type: file.mimeType || fallbackMime,
                     },
                   });
@@ -277,7 +281,11 @@ export const appRouter = router({
               return { role: m.role, content: parts };
             }
             return { role: m.role, content: m.content };
-          }),
+          })
+        );
+        const llmMessages = [
+          { role: "system" as const, content: systemPrompt },
+          ...mappedMessages,
         ];
 
         const response = await invokeLLM({ messages: llmMessages });

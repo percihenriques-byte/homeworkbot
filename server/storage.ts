@@ -76,6 +76,37 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
   return { key, url: `/manus-storage/${key}` };
 }
 
+const MANUS_STORAGE_PREFIX = "/manus-storage/";
+
+/**
+ * Extrai a key de storage a partir de um path /manus-storage/{key}.
+ * Retorna null se a url não for um path relativo do Manus (ex: já é
+ * absoluta http/https, ou tem outro formato).
+ */
+export function keyFromStorageUrl(url: string): string | null {
+  if (!url.startsWith(MANUS_STORAGE_PREFIX)) return null;
+  const key = url.slice(MANUS_STORAGE_PREFIX.length);
+  return key.length > 0 ? key : null;
+}
+
+/**
+ * Resolve uma URL de arquivo para algo que um consumidor EXTERNO (ex: o
+ * provedor do LLM baixando image_url/file_url) consiga acessar. Paths
+ * relativos /manus-storage/ só resolvem no próprio host do Manus, então
+ * trocamos por uma URL absoluta pré-assinada do S3. URLs já absolutas
+ * (http/https) passam direto. Em qualquer falha, devolve a url original
+ * (degradação suave — melhor tentar do que quebrar o fluxo).
+ */
+export async function resolveExternalUrl(url: string): Promise<string> {
+  const key = keyFromStorageUrl(url);
+  if (!key) return url;
+  try {
+    return await storageGetSignedUrl(key);
+  } catch {
+    return url;
+  }
+}
+
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = normalizeKey(relKey);
