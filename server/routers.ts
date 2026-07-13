@@ -594,10 +594,24 @@ export const appRouter = router({
           },
           {
             role: "user",
+            // Cap em 50 tarefas pra não estourar context em usuário com
+            // muita coisa acumulada. Prioriza as mais urgentes (menor
+            // dueDate primeiro; nulls no fim).
             content: `Crie um cronograma para estas tarefas: ${JSON.stringify(
-              tasks
-                .filter((t) => !t.completedAt)
-                .map((t) => ({ title: t.title, dueDate: t.dueDate, priority: t.priority, subject: t.subject }))
+              pendingTasks
+                .slice()
+                .sort((a, b) => {
+                  const ad = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+                  const bd = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+                  return ad - bd;
+                })
+                .slice(0, 50)
+                .map((t) => ({
+                  title: t.title,
+                  dueDate: t.dueDate,
+                  priority: t.priority,
+                  subject: t.subject,
+                }))
             )}`,
           },
         ],
