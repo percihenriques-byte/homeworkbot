@@ -156,14 +156,15 @@ export default function Memories() {
       <div className="grid gap-4">
         {memories && memories.length > 0 ? (
           memories.map((memory: any) => {
+            const rawContent = String(memory.content ?? "");
             const preview =
-              memory.content.length > 150
-                ? memory.content.substring(0, 150).trim() + "…"
-                : memory.content;
+              rawContent.length > 150
+                ? rawContent.substring(0, 150).trim() + "…"
+                : rawContent;
             return (
               <Card
                 key={memory.id}
-                className="bg-slate-800/50 border-slate-700 hover:border-slate-600 transition-colors p-4"
+                className="bg-card/50 border-border hover:border-primary/50 transition-colors p-4"
               >
                 <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
                   <div className="flex-1 min-w-0 w-full">
