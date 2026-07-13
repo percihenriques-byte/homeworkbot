@@ -433,8 +433,23 @@ export async function getPendingEmailReminders() {
 export async function updateEmailReminder(id: number, updates: Partial<InsertEmailReminder>) {
   const db = await getDb();
   if (!db) return;
-  
+
   await db.update(emailReminders).set(updates).where(eq(emailReminders.id, id));
+}
+
+// Remove os lembretes ainda NÃO enviados de uma tarefa. Usado ao editar
+// (reagenda) ou deletar a tarefa, sem apagar histórico do que já foi enviado.
+export async function deleteUnsentRemindersForTask(userId: number, taskId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(emailReminders).where(
+    and(
+      eq(emailReminders.userId, userId),
+      eq(emailReminders.taskId, taskId),
+      eq(emailReminders.sent, false)
+    )
+  );
 }
 
 

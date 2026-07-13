@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { sendTestEmail, sendCompletedTaskEmail } from "./email";
 import { extractJson } from "./utils/extractJson";
 import { parseIcs } from "./utils/parseIcs";
+import { syncTaskReminder } from "./reminders";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
 
 export const appRouter = router({
@@ -68,6 +69,8 @@ export const appRouter = router({
           ...input,
           status: "pendente",
         });
+        // Agenda o lembrete por e-mail (24h antes do prazo) se houver dueDate.
+        if (result) await syncTaskReminder(ctx.user.id, result as any);
         return result;
       }),
     get: protectedProcedure
@@ -103,11 +106,16 @@ export const appRouter = router({
           patch.completedAt = null;
         }
         await db.updateTask(id, ctx.user.id, patch);
-        return await db.getTaskById(id, ctx.user.id);
+        const updated = await db.getTaskById(id, ctx.user.id);
+        // Reagenda (ou cancela) o lembrete conforme o novo prazo/status.
+        await syncTaskReminder(ctx.user.id, updated as any);
+        return updated;
       }),
     delete: protectedProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
+        // Remove lembretes pendentes antes de apagar a tarefa.
+        await db.deleteUnsentRemindersForTask(ctx.user.id, input.id);
         await db.deleteTask(input.id, ctx.user.id);
         return { success: true };
       }),
@@ -939,12 +947,13 @@ export const appRouter = router({
             continue;
           }
           seen.add(key);
-          await db.createTask({
+          const created = await db.createTask({
             userId: ctx.user.id,
             title: ev.title.slice(0, 255),
             description: ev.description ? ev.description.slice(0, 5000) : undefined,
             dueDate: ev.dueDate ?? undefined,
           });
+          if (created) await syncTaskReminder(ctx.user.id, created as any);
           imported++;
         }
         return { imported, skipped, total: events.length };
