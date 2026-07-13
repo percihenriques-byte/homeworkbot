@@ -200,7 +200,18 @@ export default function StudyTools() {
         </Button>
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          // Limpa o form ao fechar (sem gerar) pra próxima abertura
+          // não trazer conteúdo velho.
+          if (!open) {
+            setContent("");
+            setSubject("");
+          }
+        }}
+      >
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Gerar Ferramentas de Estudo</DialogTitle>
