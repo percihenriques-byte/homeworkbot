@@ -325,7 +325,28 @@ export default function Tasks() {
 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl sm:text-3xl font-bold">Minhas Tarefas</h1>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog
+          open={isOpen}
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            // Ao fechar (sem submit), limpa o form pra próxima abertura
+            // não vir com estado stale (útil quando edita task X, cancela,
+            // e clica "Nova Tarefa" — antes vinha pré-preenchido com X).
+            if (!open) {
+              setEditingId(null);
+              setFormData({
+                title: "",
+                description: "",
+                dueDate: "",
+                difficulty: "médio",
+                priority: "média",
+                type: "tarefa",
+                subject: "",
+                notes: "",
+              });
+            }
+          }}
+        >
             <DialogTrigger asChild>
               <Button className="gap-2 min-h-11">
                 <Plus className="w-4 h-4" />
