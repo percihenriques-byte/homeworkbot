@@ -11,6 +11,7 @@ import { sendTestEmail, sendCompletedTaskEmail } from "./email";
 import { extractJson } from "./utils/extractJson";
 import { parseIcs } from "./utils/parseIcs";
 import { syncTaskReminder } from "./reminders";
+import { AGENT_TOOLS, executeAgentTool } from "./agentTools";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
 
 export const appRouter = router({
@@ -309,15 +310,61 @@ export const appRouter = router({
           ...mappedMessages,
         ];
 
-        const response = await invokeLLM({ messages: llmMessages });
-
-        const raw = response.choices[0]?.message?.content;
-        const assistantMessage =
+        const textOf = (raw: any): string =>
           typeof raw === "string"
             ? raw
             : Array.isArray(raw)
               ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
               : "";
+
+        // Primeira chamada COM ferramentas: o modelo decide se age (criar
+        // tarefa, gerar material...) ou só responde. toolChoice "auto".
+        const response = await invokeLLM({
+          messages: llmMessages,
+          tools: AGENT_TOOLS,
+          toolChoice: "auto",
+        });
+        const choice = response.choices[0]?.message;
+        const toolCalls: any[] = Array.isArray((choice as any)?.tool_calls)
+          ? (choice as any).tool_calls
+          : [];
+
+        let assistantMessage = textOf(choice?.content);
+        const actions: string[] = [];
+
+        if (toolCalls.length > 0) {
+          // EXECUTA cada ferramenta pedida. O modelo pode pedir várias de
+          // uma vez (ex: criar tarefa + gerar flashcards).
+          for (const tc of toolCalls) {
+            let parsedArgs: any = {};
+            try {
+              parsedArgs = JSON.parse(tc?.function?.arguments || "{}");
+            } catch {
+              parsedArgs = {};
+            }
+            const result = await executeAgentTool(tc?.function?.name, parsedArgs, ctx.user.id);
+            actions.push((result.ok ? "✅ " : "⚠️ ") + result.summary);
+          }
+
+          // Segunda chamada, SEM ferramentas: pede o RELATÓRIO final ao
+          // usuário com base no que foi executado. (Não reenviamos as
+          // tool_calls porque o SDK _core não as preserva; folhamos o
+          // resultado como contexto.)
+          const reportPrompt =
+            `Você acabou de executar as ações abaixo no app do usuário. ` +
+            `Escreva agora a resposta final, em Português (BR), relatando de forma organizada ` +
+            `o que foi feito (use ✅ e listas), e sugira o próximo passo. ` +
+            `NÃO invente ações que não estão nesta lista.\n\nAções executadas:\n` +
+            actions.map((a) => `- ${a}`).join("\n");
+          const reportResp = await invokeLLM({
+            messages: [...llmMessages, { role: "user" as const, content: reportPrompt }],
+          });
+          const reportText = textOf(reportResp.choices[0]?.message?.content).trim();
+          // Se o relatório vier vazio, monta um fallback com as próprias ações.
+          assistantMessage =
+            reportText ||
+            `Prontinho! Aqui está o que fiz:\n\n${actions.join("\n")}`;
+        }
 
         // Fallback amigável se o LLM retornar vazio. Preserva o histórico
         // da conversa (evita mensagem "user" órfã sem resposta) e sinaliza
@@ -345,6 +392,9 @@ export const appRouter = router({
         return {
           conversationId: input.conversationId,
           message: finalAssistantMessage,
+          // Ações que o agente executou (criar tarefa, gerar material...).
+          // O frontend usa pra atualizar as outras telas (invalidar queries).
+          actions,
         };
       }),
 
