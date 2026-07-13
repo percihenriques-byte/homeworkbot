@@ -290,7 +290,19 @@ export const appRouter = router({
 
         messages.push({ role: "assistant", content: assistantMessage, timestamp: new Date() });
 
-        await db.updateConversation(input.conversationId, ctx.user.id, { messages });
+        // Se era a primeira troca do usuário e o título ainda é o padrão
+        // "Nova Conversa", renomeia com as primeiras palavras da mensagem.
+        // Evita ter 15 conversas todas chamadas "Nova Conversa" na sidebar.
+        const isFirstUserMessage = messages.filter((m) => m.role === "user").length === 1;
+        const hasDefaultTitle = !conv.title || conv.title === "Nova Conversa";
+        const patch: any = { messages };
+        if (isFirstUserMessage && hasDefaultTitle) {
+          const derived = input.message.trim().slice(0, 60).replace(/\s+/g, " ");
+          if (derived) {
+            patch.title = derived + (input.message.length > 60 ? "…" : "");
+          }
+        }
+        await db.updateConversation(input.conversationId, ctx.user.id, patch);
 
         return {
           conversationId: input.conversationId,
