@@ -343,10 +343,16 @@ export async function createQuiz(quiz: InsertQuiz) {
 export async function getQuizzesByUserId(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(quizzes)
     .where(eq(quizzes.userId, userId))
     .orderBy(desc(quizzes.createdAt));
+}
+
+export async function deleteQuiz(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(quizzes).where(and(eq(quizzes.id, id), eq(quizzes.userId, userId)));
 }
 
 // Study Guides
@@ -360,10 +366,16 @@ export async function createStudyGuide(guide: InsertStudyGuide) {
 export async function getStudyGuidesByUserId(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(studyGuides)
     .where(eq(studyGuides.userId, userId))
     .orderBy(desc(studyGuides.createdAt));
+}
+
+export async function deleteStudyGuide(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(studyGuides).where(and(eq(studyGuides.id, id), eq(studyGuides.userId, userId)));
 }
 
 // Email Reminders

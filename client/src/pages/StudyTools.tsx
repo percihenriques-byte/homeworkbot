@@ -44,6 +44,8 @@ export default function StudyTools() {
   const generateQuizMutation = trpc.studyTools.generateQuiz.useMutation();
   const generateGuideMutation = trpc.studyTools.generateStudyGuide.useMutation();
   const deleteFlashcardMutation = trpc.flashcards.delete.useMutation();
+  const deleteQuizMutation = trpc.quizzes.delete.useMutation();
+  const deleteGuideMutation = trpc.studyGuides.delete.useMutation();
 
   const { data: flashcards, refetch: refetchFlashcards } = trpc.flashcards.list.useQuery({});
   const { data: quizzes, refetch: refetchQuizzes } = trpc.quizzes.list.useQuery();
@@ -108,6 +110,26 @@ export default function StudyTools() {
       toast.success("Flashcard removido");
     } catch (error: any) {
       toast.error(error?.message || "Erro ao remover flashcard");
+    }
+  };
+
+  const handleDeleteQuiz = async (id: number) => {
+    try {
+      await deleteQuizMutation.mutateAsync({ id });
+      await refetchQuizzes();
+      toast.success("Quiz removido");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao remover quiz");
+    }
+  };
+
+  const handleDeleteGuide = async (id: number) => {
+    try {
+      await deleteGuideMutation.mutateAsync({ id });
+      await refetchGuides();
+      toast.success("Guia removido");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao remover guia");
     }
   };
 
@@ -302,9 +324,9 @@ export default function StudyTools() {
           ) : (
             <ul className="space-y-2">
               {(guides ?? []).map((g: any) => (
-                <li key={g.id}>
+                <li key={g.id} className="flex items-center gap-2">
                   <button
-                    className="w-full text-left p-3 rounded hover:bg-muted transition-colors min-h-11"
+                    className="flex-1 text-left p-3 rounded hover:bg-muted transition-colors min-h-11"
                     onClick={() => setSelectedGuide(g)}
                   >
                     <p className="font-medium break-words">{g.title}</p>
@@ -312,6 +334,16 @@ export default function StudyTools() {
                       <p className="text-xs text-muted-foreground">{g.subject}</p>
                     )}
                   </button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-11 w-11 shrink-0"
+                    aria-label="Remover guia"
+                    onClick={() => handleDeleteGuide(g.id)}
+                    disabled={deleteGuideMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -332,25 +364,37 @@ export default function StudyTools() {
                 const hasQuestions = Array.isArray(q.questions) && q.questions.length > 0;
                 return (
                   <li key={q.id}>
-                    <button
-                      className="w-full text-left p-3 rounded hover:bg-muted transition-colors min-h-11 flex items-center justify-between gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => hasQuestions && setPlayingQuiz(q)}
-                      disabled={!hasQuestions}
-                      title={hasQuestions ? "Jogar quiz" : "Quiz sem questões"}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium break-words">{q.title}</p>
-                        {q.subject && (
-                          <p className="text-xs text-muted-foreground">{q.subject}</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="flex-1 text-left p-3 rounded hover:bg-muted transition-colors min-h-11 flex items-center justify-between gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => hasQuestions && setPlayingQuiz(q)}
+                        disabled={!hasQuestions}
+                        title={hasQuestions ? "Jogar quiz" : "Quiz sem questões"}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium break-words">{q.title}</p>
+                          {q.subject && (
+                            <p className="text-xs text-muted-foreground">{q.subject}</p>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {q.totalQuestions ?? (Array.isArray(q.questions) ? q.questions.length : 0)} questões
+                          </p>
+                        </div>
+                        {hasQuestions && (
+                          <Badge variant="secondary" className="whitespace-nowrap">Jogar</Badge>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {q.totalQuestions ?? (Array.isArray(q.questions) ? q.questions.length : 0)} questões
-                        </p>
-                      </div>
-                      {hasQuestions && (
-                        <Badge variant="secondary" className="whitespace-nowrap">Jogar</Badge>
-                      )}
-                    </button>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-11 w-11 shrink-0"
+                        aria-label="Remover quiz"
+                        onClick={() => handleDeleteQuiz(q.id)}
+                        disabled={deleteQuizMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </li>
                 );
               })}

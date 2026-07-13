@@ -448,12 +448,24 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return await db.getQuizzesByUserId(ctx.user.id);
     }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteQuiz(input.id, ctx.user.id);
+        return { success: true };
+      }),
   }),
 
   studyGuides: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return await db.getStudyGuidesByUserId(ctx.user.id);
     }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteStudyGuide(input.id, ctx.user.id);
+        return { success: true };
+      }),
   }),
 
   studyTools: router({
