@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wand2, BookOpen, HelpCircle, Trash2, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { Wand2, BookOpen, HelpCircle, Trash2, ChevronLeft, ChevronRight, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 
@@ -56,6 +56,7 @@ export default function StudyTools() {
   const [studyIndex, setStudyIndex] = useState(0);
   const [studyMode, setStudyMode] = useState<null | { subject?: string }>(null);
   const [selectedGuide, setSelectedGuide] = useState<any>(null);
+  const [playingQuiz, setPlayingQuiz] = useState<any>(null);
 
   const isPending =
     generateFlashcardsMutation.isPending ||
@@ -327,15 +328,32 @@ export default function StudyTools() {
             <p className="text-sm text-muted-foreground">Nenhum quiz gerado ainda.</p>
           ) : (
             <ul className="space-y-2">
-              {(quizzes ?? []).map((q: any) => (
-                <li key={q.id} className="p-3 rounded bg-muted/50">
-                  <p className="font-medium break-words">{q.title}</p>
-                  {q.subject && <p className="text-xs text-muted-foreground">{q.subject}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {q.totalQuestions ?? 0} questões
-                  </p>
-                </li>
-              ))}
+              {(quizzes ?? []).map((q: any) => {
+                const hasQuestions = Array.isArray(q.questions) && q.questions.length > 0;
+                return (
+                  <li key={q.id}>
+                    <button
+                      className="w-full text-left p-3 rounded hover:bg-muted transition-colors min-h-11 flex items-center justify-between gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => hasQuestions && setPlayingQuiz(q)}
+                      disabled={!hasQuestions}
+                      title={hasQuestions ? "Jogar quiz" : "Quiz sem questões"}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium break-words">{q.title}</p>
+                        {q.subject && (
+                          <p className="text-xs text-muted-foreground">{q.subject}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {q.totalQuestions ?? (Array.isArray(q.questions) ? q.questions.length : 0)} questões
+                        </p>
+                      </div>
+                      {hasQuestions && (
+                        <Badge variant="secondary" className="whitespace-nowrap">Jogar</Badge>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>
@@ -354,6 +372,21 @@ export default function StudyTools() {
               cards={studyCards}
               index={studyIndex}
               onIndexChange={setStudyIndex}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de jogar quiz */}
+      <Dialog open={playingQuiz !== null} onOpenChange={(open) => !open && setPlayingQuiz(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="break-words">{playingQuiz?.title}</DialogTitle>
+          </DialogHeader>
+          {playingQuiz && (
+            <QuizGame
+              questions={playingQuiz.questions ?? []}
+              onClose={() => setPlayingQuiz(null)}
             />
           )}
         </DialogContent>
@@ -476,6 +509,154 @@ function StudyDeck({ cards, index, onIndexChange }: StudyDeckProps) {
         >
           Próximo <ChevronRight className="w-4 h-4" />
         </Button>
+      </div>
+    </div>
+  );
+}
+
+type QuizGameProps = {
+  questions: any[];
+  onClose: () => void;
+};
+
+function QuizGame({ questions, onClose }: QuizGameProps) {
+  const [index, setIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [finished, setFinished] = useState(false);
+
+  const total = questions.length;
+  const q = questions[index];
+  const currentAnswer = answers[index];
+  const isCorrect = currentAnswer !== undefined && currentAnswer === q?.correctAnswer;
+
+  const score = useMemo(
+    () =>
+      questions.reduce(
+        (acc, question, i) => (answers[i] === question.correctAnswer ? acc + 1 : acc),
+        0
+      ),
+    [answers, questions]
+  );
+
+  if (finished) {
+    const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+    return (
+      <div className="space-y-4 text-center">
+        <div className="py-6">
+          <p className="text-4xl sm:text-5xl font-bold mb-2">{pct}%</p>
+          <p className="text-muted-foreground">
+            Você acertou {score} de {total} questões
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 sm:justify-center">
+          <Button
+            variant="outline"
+            className="min-h-11"
+            onClick={() => {
+              setAnswers({});
+              setIndex(0);
+              setFinished(false);
+            }}
+          >
+            Jogar novamente
+          </Button>
+          <Button className="min-h-11" onClick={onClose}>
+            Fechar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!q) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-6">
+        Este quiz não tem questões salvas.
+      </p>
+    );
+  }
+
+  const options: string[] = Array.isArray(q.options) ? q.options : [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>
+          Questão {index + 1} / {total}
+        </span>
+        <span>Acertos: {score}</span>
+      </div>
+
+      <div className="p-4 rounded-lg bg-muted/30 border">
+        <p className="text-base sm:text-lg font-medium break-words">{q.question}</p>
+      </div>
+
+      <div className="space-y-2">
+        {options.map((opt, i) => {
+          const chosen = currentAnswer === opt;
+          const correctChoice = q.correctAnswer === opt;
+          const showResult = currentAnswer !== undefined;
+          return (
+            <button
+              key={i}
+              onClick={() => !showResult && setAnswers({ ...answers, [index]: opt })}
+              disabled={showResult}
+              className={`w-full text-left p-3 rounded border transition-colors min-h-11 break-words ${
+                !showResult
+                  ? "hover:bg-muted"
+                  : correctChoice
+                    ? "border-green-500 bg-green-500/10"
+                    : chosen
+                      ? "border-red-500 bg-red-500/10"
+                      : "opacity-60"
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                {showResult && correctChoice && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                )}
+                {showResult && chosen && !correctChoice && (
+                  <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                )}
+                <span>{opt}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {currentAnswer !== undefined && (
+        <p className={`text-sm text-center ${isCorrect ? "text-green-500" : "text-red-500"}`}>
+          {isCorrect ? "Correto!" : `Resposta correta: ${q.correctAnswer}`}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <Button
+          variant="outline"
+          className="min-h-11"
+          onClick={() => setIndex(Math.max(0, index - 1))}
+          disabled={index === 0}
+        >
+          Anterior
+        </Button>
+        {index < total - 1 ? (
+          <Button
+            className="min-h-11"
+            onClick={() => setIndex(index + 1)}
+            disabled={currentAnswer === undefined}
+          >
+            Próxima
+          </Button>
+        ) : (
+          <Button
+            className="min-h-11"
+            onClick={() => setFinished(true)}
+            disabled={currentAnswer === undefined}
+          >
+            Ver resultado
+          </Button>
+        )}
       </div>
     </div>
   );
