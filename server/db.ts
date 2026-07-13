@@ -23,7 +23,17 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Força charset utf8mb4 na conexão. Sem isso, os valores de enum
+      // acentuados no schema ("fácil", "médio", "difícil", "concluída")
+      // corrompem em trânsito quando a DATABASE_URL não declara charset.
+      // O mysql2 faz merge: parseia a `uri` e a opção `charset` explícita
+      // (definida aqui) tem prioridade sobre o que vier na URL.
+      _db = drizzle({
+        connection: {
+          uri: process.env.DATABASE_URL,
+          charset: "utf8mb4",
+        },
+      });
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
