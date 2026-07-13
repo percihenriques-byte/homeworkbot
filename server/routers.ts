@@ -305,6 +305,14 @@ export const appRouter = router({
           for (const memory of memories.slice(0, 5)) {
             systemPrompt += `\n--- ${memory.title}${memory.category ? ` (${memory.category})` : ""} ---\n${memory.content.substring(0, 800)}\n`;
           }
+        } else {
+          // Sem memórias: instrução mais moderada para o LLM não inventar
+          // um estilo. Melhor produzir texto neutro adolescente/estudante
+          // do que arriscar imitar mal.
+          systemPrompt +=
+            `\n\nO usuário ainda não cadastrou memórias com amostras do próprio estilo. ` +
+            `Escreva em um tom natural de estudante brasileiro, direto e claro, sem gírias exageradas. ` +
+            `Use frases de tamanho médio, evite chavões acadêmicos e termos rebuscados.`;
         }
 
         const userInstruction =
