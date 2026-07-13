@@ -590,6 +590,30 @@ function QuizGame({ questions, onClose }: QuizGameProps) {
 
   const options: string[] = Array.isArray(q.options) ? q.options : [];
 
+  // Se por algum motivo essa questão específica veio sem opções válidas
+  // (quiz antigo, gerado antes da validação server-side), avisa e permite
+  // pular pra próxima em vez de travar o jogo.
+  if (options.length < 2) {
+    return (
+      <div className="space-y-4 text-center py-4">
+        <p className="text-muted-foreground break-words">
+          Esta questão está sem opções válidas e foi pulada.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 sm:justify-center">
+          {index < total - 1 ? (
+            <Button className="min-h-11" onClick={() => setIndex(index + 1)}>
+              Próxima questão
+            </Button>
+          ) : (
+            <Button className="min-h-11" onClick={() => setFinished(true)}>
+              Ver resultado
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-muted-foreground">
