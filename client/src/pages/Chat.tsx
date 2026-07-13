@@ -251,7 +251,7 @@ export default function Chat() {
           <p className="font-semibold text-primary">Solte para anexar</p>
         </div>
       )}
-      <div className="w-full md:w-64 md:border-r border-border flex flex-col border-b md:border-b-0 max-h-40 md:max-h-none">
+      <div className="w-full md:w-64 md:border-r border-border flex flex-col border-b md:border-b-0 max-h-56 md:max-h-none">
         <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold">Conversas</h2>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
