@@ -123,23 +123,26 @@ export default function Dashboard() {
               <Progress value={(doneCount / steps.length) * 100} className="w-full sm:w-40" />
             </div>
             <ul className="space-y-2">
-              {steps.map((step) => (
-                <li key={step.path}>
-                  <button
-                    className={`w-full flex items-center gap-3 p-3 rounded transition-colors min-h-11 text-left ${step.done ? "opacity-60" : "hover:bg-muted"}`}
-                    onClick={() => navigate(step.path)}
-                    disabled={step.done}
-                  >
-                    {step.done ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                    ) : (
-                      <step.icon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                    )}
-                    <span className={`text-sm break-words flex-1 ${step.done ? "line-through" : ""}`}>{step.label}</span>
-                    {!step.done && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-                  </button>
-                </li>
-              ))}
+              {steps.map((step) => {
+                const StepIcon = step.icon;
+                return (
+                  <li key={step.path}>
+                    <button
+                      className={`w-full flex items-center gap-3 p-3 rounded transition-colors min-h-11 text-left ${step.done ? "opacity-60" : "hover:bg-muted"}`}
+                      onClick={() => navigate(step.path)}
+                      disabled={step.done}
+                    >
+                      {step.done ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <StepIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <span className={`text-sm break-words flex-1 ${step.done ? "line-through" : ""}`}>{step.label}</span>
+                      {!step.done && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </Card>
         );
