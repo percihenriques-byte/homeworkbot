@@ -106,8 +106,16 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Onboarding: aparece somente quando faltam passos importantes */}
-      {(() => {
+      {/* Onboarding: aparece somente quando faltam passos importantes.
+          Só renderiza depois que TODAS as queries resolveram, senão
+          renderiza checklist como "0/4" enquanto carrega.
+          integrationSettings pode ser null (não configurado ainda) ou
+          undefined (query rodando) — testar com !== undefined. */}
+      {!tasksLoading &&
+        tasks !== undefined &&
+        memories !== undefined &&
+        conversations !== undefined &&
+        integrationSettings !== undefined && (() => {
         const steps = [
           {
             label: "Configurar Gmail para receber tarefas por email",
