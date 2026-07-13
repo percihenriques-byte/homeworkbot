@@ -1,4 +1,4 @@
-import { eq, and, desc, gte, lte, ne } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -280,7 +280,6 @@ export async function reviewFlashcard(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;
 
-  const { sql } = await import("drizzle-orm");
   await db
     .update(flashcards)
     .set({
