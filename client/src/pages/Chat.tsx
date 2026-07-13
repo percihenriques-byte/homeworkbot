@@ -410,12 +410,19 @@ export default function Chat() {
                         <div className="mb-2 space-y-2">
                           {attachments.map((att: any, aidx: number) => (
                             att.type === "image" ? (
-                              <img
+                              <a
                                 key={aidx}
-                                src={att.url}
-                                alt="Anexo"
-                                className="rounded max-w-full max-h-64 object-contain"
-                              />
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Abrir imagem em nova aba"
+                              >
+                                <img
+                                  src={att.url}
+                                  alt="Anexo"
+                                  className="rounded max-w-full max-h-64 object-contain hover:opacity-90 transition-opacity"
+                                />
+                              </a>
                             ) : (
                               <a
                                 key={aidx}
