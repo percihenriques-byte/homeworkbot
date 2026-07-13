@@ -48,8 +48,8 @@ export default function Memories() {
       setIsOpen(false);
       await refetch();
       toast.success("Memória adicionada com sucesso!");
-    } catch {
-      toast.error("Erro ao adicionar memória");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao adicionar memória");
     }
   };
 
@@ -60,8 +60,8 @@ export default function Memories() {
       setDeleteConfirm(null);
       await refetch();
       toast.success("Memória removida");
-    } catch {
-      toast.error("Erro ao remover memória");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao remover memória");
     }
   };
 

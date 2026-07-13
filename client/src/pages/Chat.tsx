@@ -66,8 +66,8 @@ export default function Chat() {
       }
       setIsOpen(false);
       toast.success("Conversa criada!");
-    } catch {
-      toast.error("Erro ao criar conversa");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao criar conversa");
     }
   };
 
@@ -86,8 +86,8 @@ export default function Chat() {
         fileUrls: outgoingAttachments.map((a) => ({ url: a.url, type: a.type })),
       });
       await refetch();
-    } catch {
-      toast.error("Erro ao enviar mensagem");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao enviar mensagem");
       setMessageInput(outgoing);
       setPendingAttachments(outgoingAttachments);
     }
@@ -213,8 +213,8 @@ export default function Chat() {
       await renameConvMutation.mutateAsync({ id: renamingId, title: newTitle });
       await refetch();
       toast.success("Conversa renomeada");
-    } catch {
-      toast.error("Erro ao renomear");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao renomear");
     } finally {
       cancelRename();
     }
@@ -228,8 +228,8 @@ export default function Chat() {
       setDeleteConfirm(null);
       await refetch();
       toast.success("Conversa deletada!");
-    } catch {
-      toast.error("Erro ao deletar conversa");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao deletar conversa");
     }
   };
 

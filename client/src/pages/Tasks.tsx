@@ -150,8 +150,8 @@ export default function Tasks() {
         navigate("/chat");
         toast.success("Conversa criada com contexto da tarefa!");
       }
-    } catch {
-      toast.error("Erro ao criar conversa");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao criar conversa");
     }
   };
 
@@ -182,8 +182,8 @@ export default function Tasks() {
       await updateTaskMutation.mutateAsync({ id: task.id, status: newStatus as any });
       toast.success(newStatus === "concluída" ? "Tarefa concluída!" : "Tarefa reaberta");
       refetch();
-    } catch {
-      toast.error("Erro ao atualizar status");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao atualizar status");
     }
   };
 

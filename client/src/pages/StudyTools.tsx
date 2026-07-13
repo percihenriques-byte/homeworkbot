@@ -91,8 +91,8 @@ export default function StudyTools() {
         toast.success("Guia de estudo gerado com sucesso!");
       }
       closeAndReset();
-    } catch {
-      toast.error("Erro ao gerar conteúdo. Tente novamente.");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao gerar conteúdo. Tente novamente.");
     }
   };
 
@@ -106,8 +106,8 @@ export default function StudyTools() {
       await deleteFlashcardMutation.mutateAsync({ id });
       await refetchFlashcards();
       toast.success("Flashcard removido");
-    } catch {
-      toast.error("Erro ao remover flashcard");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao remover flashcard");
     }
   };
 
