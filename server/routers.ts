@@ -50,13 +50,15 @@ export const appRouter = router({
     }),
     update: protectedProcedure
       .input(z.object({
-        smtpEmail: z.string().email().optional(),
-        smtpPassword: z.string().optional(),
-        smtpHost: z.string().optional(),
-        smtpPort: z.number().optional(),
-        whatsappNumber: z.string().optional(),
-        whatsappApiKey: z.string().optional(),
-        aiStyle: z.string().optional(),
+        // Aceita "" (clear) ou email valido. Antes rejeitava "" com
+        // "invalid email" — nao dava pra limpar o campo depois de setar.
+        smtpEmail: z.union([z.literal(""), z.string().email()]).optional(),
+        smtpPassword: z.string().max(500).optional(),
+        smtpHost: z.string().max(255).optional(),
+        smtpPort: z.number().int().min(1).max(65535).optional(),
+        whatsappNumber: z.string().max(20).optional(),
+        whatsappApiKey: z.string().max(500).optional(),
+        aiStyle: z.string().max(2000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await db.upsertUserPreferences(ctx.user.id, input);
