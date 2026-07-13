@@ -37,6 +37,32 @@ export default function Tasks() {
   const createConvMutation = trpc.conversations.create.useMutation();
   const [toddleConnected, setToddleConnected] = useState(false);
   const [aiResult, setAiResult] = useState<{ taskId: number; taskTitle: string; content: string } | null>(null);
+  // ID vindo do deep-link (?highlight=) — usado pra rolar até a tarefa e
+  // destacá-la por alguns segundos ao chegar do Dashboard.
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+
+  // Lê ?highlight= da URL quando as tarefas já carregaram, rola até o card
+  // e aplica o realce temporário. Depois limpa o param da URL pra não
+  // re-destacar em refresh.
+  useEffect(() => {
+    if (isLoading || !tasks) return;
+    const raw = new URLSearchParams(window.location.search).get("highlight");
+    const id = raw ? parseInt(raw, 10) : NaN;
+    if (!Number.isFinite(id)) return;
+    setHighlightId(id);
+    // Espera o próximo frame pra garantir que o card já está no DOM.
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById(`task-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 60);
+    const clearTimer = window.setTimeout(() => setHighlightId(null), 2600);
+    // Remove o query param sem recarregar (mantém histórico limpo).
+    window.history.replaceState(null, "", "/tarefas");
+    return () => {
+      window.clearTimeout(scrollTimer);
+      window.clearTimeout(clearTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]);
 
   const handleToddleSync = async () => {
     try {
@@ -565,7 +591,13 @@ export default function Tasks() {
             const priClass = priorityColors[pri as keyof typeof priorityColors] ?? "bg-muted text-muted-foreground";
             const difClass = difficultyColors[dif as keyof typeof difficultyColors] ?? "bg-muted text-muted-foreground";
             return (
-              <Card key={task.id} className={`p-4 hover:shadow-md transition-shadow ${isDone ? "opacity-70" : ""}`}>
+              <Card
+                key={task.id}
+                id={`task-${task.id}`}
+                className={`p-4 hover:shadow-md transition-shadow ${isDone ? "opacity-70" : ""} ${
+                  highlightId === task.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3 flex-col sm:flex-row">
                   <div className="flex items-start gap-3 flex-1 min-w-0 w-full">
                     <Button

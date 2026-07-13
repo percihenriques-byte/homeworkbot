@@ -250,7 +250,7 @@ export default function Dashboard() {
                 return (
                   <li key={t.id}>
                     <button
-                      onClick={() => navigate("/tarefas")}
+                      onClick={() => navigate(`/tarefas?highlight=${t.id}`)}
                       className="w-full p-3 rounded bg-muted/50 hover:bg-muted flex items-start justify-between gap-2 flex-wrap text-left transition-colors min-h-11"
                     >
                     <div className="min-w-0 flex-1">
