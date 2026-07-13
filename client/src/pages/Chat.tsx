@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 
-type Attachment = { name: string; url: string; type: "image" | "document" | "audio" };
+type Attachment = { name: string; url: string; type: "image" | "document" | "audio"; mimeType?: string };
 
 export default function Chat() {
   const { data: conversations, isLoading: convsLoading, refetch } = trpc.conversations.list.useQuery();
@@ -101,7 +101,7 @@ export default function Chat() {
       await sendMessageMutation.mutateAsync({
         conversationId: selectedConvId,
         message: outgoing || "(arquivo anexado)",
-        fileUrls: outgoingAttachments.map((a) => ({ url: a.url, type: a.type })),
+        fileUrls: outgoingAttachments.map((a) => ({ url: a.url, type: a.type, mimeType: a.mimeType })),
       });
       await refetch();
     } catch (error: any) {
@@ -152,6 +152,7 @@ export default function Chat() {
           name: file.name,
           url: res.url,
           type: inferAttachmentType(file.type || ""),
+          mimeType: file.type || undefined,
         });
       }
       setPendingAttachments((prev) => [...prev, ...uploaded]);

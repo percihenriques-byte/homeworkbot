@@ -180,6 +180,11 @@ export const appRouter = router({
               // (/manus-storage/...) — não usa .url() estrito.
               url: z.string().min(1).max(2000),
               type: z.enum(["image", "document", "audio"]),
+              // Mime real do arquivo (ex: "audio/ogg", "image/png").
+              // Opcional para compatibilidade com anexos antigos que só
+              // guardavam type. Quando presente, é usado direto no payload
+              // multimodal em vez de um mime genérico chutado pelo type.
+              mimeType: z.string().max(255).optional(),
             })
           )
           .max(10, "Máximo 10 arquivos por mensagem")
@@ -256,11 +261,15 @@ export const appRouter = router({
                 if (file.type === "image") {
                   parts.push({ type: "image_url", image_url: { url: file.url, detail: "auto" } });
                 } else if (file.type === "document" || file.type === "audio") {
+                  // Usa o mime real do arquivo quando disponível (.wav, .ogg,
+                  // .docx, etc). Só cai no genérico por tipo se o anexo antigo
+                  // não tiver mimeType salvo.
+                  const fallbackMime = file.type === "audio" ? "audio/mpeg" : "application/pdf";
                   parts.push({
                     type: "file_url",
                     file_url: {
                       url: file.url,
-                      mime_type: file.type === "audio" ? "audio/mpeg" : "application/pdf",
+                      mime_type: file.mimeType || fallbackMime,
                     },
                   });
                 }
