@@ -338,6 +338,13 @@ export const appRouter = router({
               ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
               : "";
 
+        if (!result.trim()) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "A IA retornou resposta vazia. Tente novamente ou reformule a tarefa.",
+          });
+        }
+
         // Salva no próprio task para o usuário revisitar depois.
         await db.updateTask(input.taskId, ctx.user.id, {
           completedContent: result,
