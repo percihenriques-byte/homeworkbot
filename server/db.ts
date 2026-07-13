@@ -1,4 +1,4 @@
-import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, users, 
@@ -179,15 +179,19 @@ export async function deleteTask(id: number, userId: number) {
 export async function getUpcomingTasks(userId: number, daysAhead: number = 7) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const futureDate = new Date();
   futureDate.setDate(futureDate.getDate() + daysAhead);
-  
+
+  // Filtra por userId + dueDate na janela, excluindo tarefas concluidas
+  // (senao uma tarefa marcada como feita apareceria como upcoming so
+  // porque a data caia dentro da janela).
   return await db.select().from(tasks)
     .where(and(
       eq(tasks.userId, userId),
       gte(tasks.dueDate, new Date()),
-      lte(tasks.dueDate, futureDate)
+      lte(tasks.dueDate, futureDate),
+      ne(tasks.status, "concluída")
     ))
     .orderBy(tasks.dueDate);
 }
