@@ -208,6 +208,13 @@ export const appRouter = router({
         const memories = await db.getUserMemoriesByUserId(ctx.user.id);
         const messages: any[] = (Array.isArray(conv.messages) ? conv.messages : []) || [];
 
+        // Se a conversa foi criada a partir de uma tarefa (conv.taskId),
+        // puxa dados atuais dela para injetar no system prompt.
+        let taskContext: any = null;
+        if (conv.taskId) {
+          taskContext = await db.getTaskById(conv.taskId, ctx.user.id);
+        }
+
         // Guardamos a mensagem do usuário como TEXTO PLANO no histórico —
         // o array multimodal só é usado na chamada ao LLM abaixo. Isso evita
         // que o usuário veja JSON bruto ao reabrir a conversa.
@@ -222,6 +229,20 @@ export const appRouter = router({
 
         if (prefs?.aiStyle) {
           systemPrompt += `\n\nEstilo preferido do usuário: ${prefs.aiStyle}`;
+        }
+
+        if (taskContext) {
+          systemPrompt += `\n\nEsta conversa está associada à tarefa do usuário:\n`;
+          systemPrompt += `- Título: ${taskContext.title}\n`;
+          if (taskContext.subject) systemPrompt += `- Disciplina: ${taskContext.subject}\n`;
+          if (taskContext.type) systemPrompt += `- Tipo: ${taskContext.type}\n`;
+          if (taskContext.dueDate)
+            systemPrompt += `- Prazo: ${new Date(taskContext.dueDate).toLocaleDateString("pt-BR")}\n`;
+          if (taskContext.description)
+            systemPrompt += `- Descrição: ${taskContext.description}\n`;
+          if (taskContext.notes)
+            systemPrompt += `- Anotações do usuário: ${taskContext.notes}\n`;
+          systemPrompt += `\nUse esse contexto para ajudar a resolver ou completar essa tarefa específica.`;
         }
 
         if (memories && memories.length > 0) {

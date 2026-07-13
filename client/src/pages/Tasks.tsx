@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLocation } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -16,12 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 
 export default function Tasks() {
+  const [, navigate] = useLocation();
   const { data: tasks, isLoading, refetch } = trpc.tasks.list.useQuery();
   const { data: integrationSettings } = trpc.integrationSettings.get.useQuery();
   const createTaskMutation = trpc.tasks.create.useMutation();
@@ -30,6 +32,7 @@ export default function Tasks() {
   const toddleSyncMutation = trpc.toddle.sync.useMutation();
   const completeTaskMutation = trpc.chat.completeTask.useMutation();
   const sendCompletedEmailMutation = trpc.email.sendCompletedTask.useMutation();
+  const createConvMutation = trpc.conversations.create.useMutation();
   const [toddleConnected, setToddleConnected] = useState(false);
   const [aiResult, setAiResult] = useState<{ taskId: number; taskTitle: string; content: string } | null>(null);
 
@@ -131,6 +134,23 @@ export default function Tasks() {
       refetch();
     } catch (error) {
       toast.error("Erro ao deletar tarefa");
+    }
+  };
+
+  const handleAskAiAboutTask = async (task: any) => {
+    try {
+      const conv = await createConvMutation.mutateAsync({
+        title: `Sobre: ${task.title}`,
+        taskId: task.id,
+      });
+      // Navega ao chat — o Chat.tsx puxa a lista e usuário só precisa
+      // clicar na conversa nova (que aparecerá no topo).
+      if (conv && typeof conv === "object" && "id" in conv) {
+        navigate("/chat");
+        toast.success("Conversa criada com contexto da tarefa!");
+      }
+    } catch {
+      toast.error("Erro ao criar conversa");
     }
   };
 
@@ -514,17 +534,30 @@ export default function Tasks() {
                   </div>
                   <div className="flex gap-2 self-end sm:self-start flex-wrap">
                     {!isDone && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-11 w-11"
-                        aria-label="Completar com IA"
-                        title="Completar com IA no meu estilo"
-                        onClick={() => handleCompleteWithAI(task)}
-                        disabled={completeTaskMutation.isPending}
-                      >
-                        <Sparkles className="w-4 h-4 text-purple-500" />
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11"
+                          aria-label="Perguntar à IA sobre esta tarefa"
+                          title="Perguntar à IA sobre esta tarefa"
+                          onClick={() => handleAskAiAboutTask(task)}
+                          disabled={createConvMutation.isPending}
+                        >
+                          <MessageSquare className="w-4 h-4 text-cyan-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-11 w-11"
+                          aria-label="Completar com IA"
+                          title="Completar com IA no meu estilo"
+                          onClick={() => handleCompleteWithAI(task)}
+                          disabled={completeTaskMutation.isPending}
+                        >
+                          <Sparkles className="w-4 h-4 text-purple-500" />
+                        </Button>
+                      </>
                     )}
                     <Button
                       variant="ghost"
