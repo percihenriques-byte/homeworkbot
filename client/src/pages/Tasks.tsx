@@ -240,21 +240,21 @@ export default function Tasks() {
   return (
     <div className="space-y-6">
       {!toddleConnected && (
-        <Card className="bg-amber-500/10 border-amber-500/20 p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="font-medium text-amber-900 mb-1">Conecte sua conta Toddle</p>
-            <p className="text-sm text-amber-800">Configure suas credenciais do Toddle em Configurações para sincronizar automaticamente suas tarefas e atribuições.</p>
+        <Card className="bg-amber-500/10 border-amber-500/30 p-4 flex items-start gap-3 flex-wrap">
+          <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-foreground mb-1">Conecte sua conta Toddle</p>
+            <p className="text-sm text-muted-foreground break-words">Configure suas credenciais do Toddle em Configurações para sincronizar automaticamente suas tarefas e atribuições.</p>
           </div>
         </Card>
       )}
 
       {toddleConnected && (
-        <Card className="bg-green-500/10 border-green-500/20 p-4 flex items-start gap-3 flex-wrap">
-          <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+        <Card className="bg-green-500/10 border-green-500/30 p-4 flex items-start gap-3 flex-wrap">
+          <Zap className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-green-900">Credenciais Toddle salvas</p>
-            <p className="text-sm text-green-800 break-words">
+            <p className="font-medium text-foreground">Credenciais Toddle salvas</p>
+            <p className="text-sm text-muted-foreground break-words">
               Suas credenciais estão prontas. Clique em "Sincronizar" para importar tarefas do Toddle.
             </p>
           </div>
