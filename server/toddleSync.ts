@@ -9,8 +9,9 @@ import { sdk } from "./_core/sdk";
 import * as db from "./db";
 import { parseIcs } from "./utils/parseIcs";
 import { syncTaskReminder } from "./reminders";
+import { completeAndEmailTask } from "./autoComplete";
 
-export type SyncResult = { imported: number; skipped: number; total: number };
+export type SyncResult = { imported: number; skipped: number; total: number; autoCompleted: number; emailed: number };
 
 // Guard básico de SSRF: só permite http/https e bloqueia hosts internos.
 // Evita que um link malicioso faça o servidor bater em endereços locais.
@@ -72,8 +73,12 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
 
   const events = parseIcs(text);
   if (events.length === 0) {
-    return { imported: 0, skipped: 0, total: 0 };
+    return { imported: 0, skipped: 0, total: 0, autoCompleted: 0, emailed: 0 };
   }
+
+  // Se a automação total estiver ligada (toddleEnabled), cada tarefa NOVA é
+  // completada pela IA no estilo do usuário e enviada por e-mail.
+  const autoDo = settings?.toddleEnabled === true;
 
   const existing = await db.getTasksByUserId(userId);
   const keyOf = (title: string, due: Date | null) =>
@@ -84,6 +89,8 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
 
   let imported = 0;
   let skipped = 0;
+  let autoCompleted = 0;
+  let emailed = 0;
   for (const ev of events) {
     const key = keyOf(ev.title, ev.dueDate);
     if (seen.has(key)) {
@@ -99,8 +106,15 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
     });
     if (created) await syncTaskReminder(userId, created as any);
     imported++;
+
+    // Pipeline autônomo: fazer a tarefa com IA e mandar por e-mail.
+    if (autoDo && created) {
+      const r = await completeAndEmailTask(userId, created as any);
+      if (r.completed) autoCompleted++;
+      if (r.emailed) emailed++;
+    }
   }
-  return { imported, skipped, total: events.length };
+  return { imported, skipped, total: events.length, autoCompleted, emailed };
 }
 
 // Rota do cron: sincroniza TODOS os usuários que têm link configurado.

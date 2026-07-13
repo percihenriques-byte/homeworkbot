@@ -114,9 +114,20 @@ export default function Tasks() {
 
   const handleToddleSync = async () => {
     try {
-      await toddleSyncMutation.mutateAsync();
+      const res: any = await toddleSyncMutation.mutateAsync();
       await refetch();
-      toast.success("Sincronização concluída!");
+      if (res?.imported > 0) {
+        let msg = `${res.imported} tarefa(s) sincronizada(s) do Toddle`;
+        if (res.autoCompleted > 0) msg += ` — ${res.autoCompleted} feita(s) pela IA`;
+        if (res.emailed > 0) msg += ` e ${res.emailed} enviada(s) por e-mail`;
+        toast.success(msg + ".");
+      } else {
+        toast.info(
+          res?.skipped > 0
+            ? `Nada novo: as ${res.skipped} tarefa(s) já existem.`
+            : "Nenhuma tarefa nova encontrada no calendário."
+        );
+      }
     } catch (error: any) {
       // Mensagem do TRPCError propaga daqui — usuário vê texto honesto
       toast.error(error?.message || "Erro ao sincronizar com o Toddle");
@@ -124,11 +135,9 @@ export default function Tasks() {
   };
 
   useEffect(() => {
-    if (integrationSettings?.toddleEmail) {
-      setToddleConnected(true);
-    } else {
-      setToddleConnected(false);
-    }
+    // "Conectado" = tem o link do calendário (o que a sync usa) OU credenciais.
+    const hasLink = !!(integrationSettings as any)?.toddleApiKey;
+    setToddleConnected(hasLink || !!integrationSettings?.toddleEmail);
   }, [integrationSettings]);
 
   const [isOpen, setIsOpen] = useState(false);

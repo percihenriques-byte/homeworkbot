@@ -979,6 +979,9 @@ export const appRouter = router({
         // Reusa a coluna toddleApiKey (já existe na tabela) para guardar o
         // LINK do calendário .ics do Toddle. Com ele, a sync roda sozinha.
         toddleApiKey: z.union([z.literal(""), z.string().max(2048)]).optional(),
+        // Automação total: quando true, cada tarefa nova sincronizada é
+        // completada pela IA no estilo do usuário e enviada por e-mail.
+        toddleEnabled: z.boolean().optional(),
         gmailUser: z.union([z.literal(""), z.string().email({ message: "Formato de email inválido" })]).optional(),
         gmailAppPassword: z.string().max(500).optional(),
       }))

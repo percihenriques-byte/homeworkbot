@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ export default function Settings() {
     toddlePassword: "",
     toddleProvider: "Lex Brasil",
     toddleApiKey: "",
+    toddleEnabled: false,
     gmailUser: "",
     gmailAppPassword: "",
   });
@@ -69,6 +71,7 @@ export default function Settings() {
         toddlePassword: integrationSettings.toddlePassword || "",
         toddleProvider: integrationSettings.toddleProvider || "Lex Brasil",
         toddleApiKey: integrationSettings.toddleApiKey || "",
+        toddleEnabled: integrationSettings.toddleEnabled === true,
         gmailUser: integrationSettings.gmailUser || "",
         gmailAppPassword: integrationSettings.gmailAppPassword || "",
       });
@@ -281,6 +284,23 @@ export default function Settings() {
                       o app busca suas tarefas <strong>automaticamente</strong>, sem você precisar fazer nada.
                       No Toddle: procure "Assinar calendário" / "Subscribe" / "iCal" e copie o link.
                     </p>
+
+                    <div className="mt-3 flex items-start justify-between gap-3 rounded-md bg-background/60 p-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">Fazer as tarefas e me enviar por e-mail</p>
+                        <p className="text-xs text-muted-foreground break-words">
+                          Quando ligado, cada tarefa nova sincronizada é feita pela IA no seu estilo e
+                          enviada pro seu Gmail — tudo sozinho. (Precisa do Gmail configurado abaixo.)
+                        </p>
+                      </div>
+                      <Switch
+                        checked={integrationData.toddleEnabled}
+                        onCheckedChange={(v) =>
+                          setIntegrationData({ ...integrationData, toddleEnabled: v })
+                        }
+                        aria-label="Ativar automação total do Toddle"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground">Usuário do Toddle <span className="text-muted-foreground">(opcional)</span></label>
