@@ -312,6 +312,12 @@ export default function Tasks() {
             placeholder="Buscar por título, descrição ou disciplina..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setSearch("");
+              }
+            }}
             className="min-h-11 sm:flex-1"
           />
         </div>
