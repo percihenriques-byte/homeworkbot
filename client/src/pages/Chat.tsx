@@ -48,6 +48,24 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, selectedConvId, sendMessageMutation.isPending]);
 
+  // Auto-seleciona conversa se veio de outra página (Tasks) via hint no
+  // localStorage. Consome uma vez e limpa. Espera as conversas carregarem
+  // pra garantir que o id existe.
+  useEffect(() => {
+    if (!conversations || conversations.length === 0) return;
+    try {
+      const hintStr = localStorage.getItem("chat-preselect-id");
+      if (!hintStr) return;
+      const hintId = parseInt(hintStr, 10);
+      localStorage.removeItem("chat-preselect-id");
+      if (Number.isFinite(hintId) && conversations.some((c) => c.id === hintId)) {
+        setSelectedConvId(hintId);
+      }
+    } catch {
+      // storage indisponível — ignora
+    }
+  }, [conversations]);
+
   // Ao trocar de conversa (ou criar), foca no input. Em mobile o navegador
   // pode ignorar o focus() por politica de gesture — o rAF ajuda a dar
   // uma janela minima pra virtual keyboard nao roubar o foco.

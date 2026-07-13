@@ -163,9 +163,11 @@ export default function Tasks() {
         title: `Sobre: ${task.title}`,
         taskId: task.id,
       });
-      // Navega ao chat — o Chat.tsx puxa a lista e usuário só precisa
-      // clicar na conversa nova (que aparecerá no topo).
       if (conv && typeof conv === "object" && "id" in conv) {
+        // Hint pro Chat.tsx auto-selecionar essa conv ao montar.
+        try {
+          localStorage.setItem("chat-preselect-id", String(conv.id));
+        } catch {}
         navigate("/chat");
         toast.success("Conversa criada com contexto da tarefa!");
       }
