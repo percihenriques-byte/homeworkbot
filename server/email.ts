@@ -21,7 +21,13 @@ function escapeHtml(input: string): string {
  */
 function formatFrom(email: string, name?: string | null): string {
   if (!name || !name.trim()) return email;
-  const safeName = name.replace(/"/g, "").trim();
+  // Remove caracteres que quebram o header RFC 5322: aspas duplas,
+  // colchetes angulares, controles, quebras de linha.
+  const safeName = name
+    .replace(/["<>\r\n]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!safeName) return email;
   return `"${safeName}" <${email}>`;
 }
 
