@@ -26,6 +26,7 @@ export default function Chat() {
   const renameConvMutation = trpc.conversations.rename.useMutation();
   const sendMessageMutation = trpc.chat.message.useMutation();
   const uploadMutation = trpc.upload.file.useMutation();
+  const utils = trpc.useUtils();
 
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
@@ -98,12 +99,23 @@ export default function Chat() {
     setMessageInput("");
     setPendingAttachments([]);
     try {
-      await sendMessageMutation.mutateAsync({
+      const res = await sendMessageMutation.mutateAsync({
         conversationId: selectedConvId,
         message: outgoing || "(arquivo anexado)",
         fileUrls: outgoingAttachments.map((a) => ({ url: a.url, type: a.type, mimeType: a.mimeType })),
       });
       await refetch();
+      // Se o agente executou ações (criou tarefa, gerou material, etc),
+      // invalida as queries das outras telas pra refletirem na hora, e
+      // avisa o usuário do que rolou.
+      if (res?.actions && res.actions.length > 0) {
+        utils.tasks.list.invalidate();
+        utils.flashcards.list.invalidate();
+        utils.quizzes.list.invalidate();
+        utils.studyGuides.list.invalidate();
+        utils.schedule.get.invalidate();
+        toast.success(`Jarvis executou ${res.actions.length} ação(ões) 🎯`);
+      }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao enviar mensagem");
       setMessageInput(outgoing);
