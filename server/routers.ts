@@ -726,8 +726,36 @@ export const appRouter = router({
         toEmail: z.string().email(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const integrationSettings = await db.getIntegrationSettings(ctx.user.id);
-        return await sendTestEmail(input.toEmail, integrationSettings?.gmailUser || undefined, integrationSettings?.gmailAppPassword || undefined);
+        const settings = await db.getIntegrationSettings(ctx.user.id);
+        if (!settings?.gmailUser || !settings?.gmailAppPassword) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message:
+              "Configure seu Gmail (email + senha de app) em Configurações antes de enviar o teste.",
+          });
+        }
+        try {
+          return await sendTestEmail(
+            input.toEmail,
+            settings.gmailUser,
+            settings.gmailAppPassword
+          );
+        } catch (error: any) {
+          const raw = String(error?.message ?? "");
+          // Traduz erros comuns do nodemailer/Gmail SMTP pra pt-BR compreensivel.
+          let friendly = "Erro ao enviar email. Verifique as credenciais e tente novamente.";
+          if (raw.includes("Invalid login") || raw.includes("BadCredentials")) {
+            friendly =
+              "Credenciais do Gmail inválidas. Verifique se você está usando uma Senha de App (não a senha normal) gerada em myaccount.google.com > Segurança.";
+          } else if (raw.includes("Missing credentials")) {
+            friendly = "Faltam email ou senha do Gmail. Preencha ambos em Configurações.";
+          } else if (raw.includes("ETIMEDOUT") || raw.includes("timeout")) {
+            friendly = "Tempo esgotado ao conectar no servidor do Gmail. Tente novamente.";
+          } else if (raw.includes("ECONNREFUSED")) {
+            friendly = "Conexão recusada pelo servidor. Verifique sua internet.";
+          }
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: friendly });
+        }
       }),
 
     // Envia o conteúdo gerado pela IA (completedContent da tarefa) para
