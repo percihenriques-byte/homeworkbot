@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare, RotateCcw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { normalize } from "@shared/normalize";
@@ -676,6 +676,29 @@ export default function Tasks() {
               >
                 <Mail className="w-4 h-4 mr-2" />
                 {sendCompletedEmailMutation.isPending ? "Enviando..." : "Enviar por email"}
+              </Button>
+              <Button
+                variant="outline"
+                className="min-h-11"
+                onClick={async () => {
+                  if (!aiResult) return;
+                  try {
+                    const res = await completeTaskMutation.mutateAsync({ taskId: aiResult.taskId });
+                    setAiResult({
+                      taskId: aiResult.taskId,
+                      taskTitle: aiResult.taskTitle,
+                      content: res.content,
+                    });
+                    await refetch();
+                    toast.success("Nova versão gerada");
+                  } catch (error: any) {
+                    toast.error(error?.message || "Erro ao regenerar");
+                  }
+                }}
+                disabled={completeTaskMutation.isPending}
+              >
+                <RotateCcw className={`w-4 h-4 mr-2 ${completeTaskMutation.isPending ? "animate-spin" : ""}`} />
+                {completeTaskMutation.isPending ? "Regenerando..." : "Regenerar"}
               </Button>
               <Button className="min-h-11" onClick={() => setAiResult(null)}>
                 Fechar
