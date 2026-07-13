@@ -17,6 +17,7 @@ import {
   Brain,
   Settings as SettingsIcon,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { normalize } from "@shared/normalize";
@@ -352,17 +353,17 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Button
-              className="min-h-11 gap-2 w-full sm:w-auto"
-              onClick={() => navigate("/tarefas")}
+              className="min-h-11 gap-2 w-full sm:w-auto glow-primary"
+              onClick={() => navigate("/chat")}
             >
-              <Plus className="w-4 h-4" /> Nova Tarefa
+              <Sparkles className="w-4 h-4" /> Pedir ao Jarvis
             </Button>
             <Button
               variant="outline"
               className="min-h-11 gap-2 w-full sm:w-auto"
-              onClick={() => navigate("/chat")}
+              onClick={() => navigate("/tarefas")}
             >
-              <MessageSquare className="w-4 h-4" /> Abrir Chat
+              <Plus className="w-4 h-4" /> Nova Tarefa
             </Button>
           </div>
         </Card>
