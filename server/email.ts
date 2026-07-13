@@ -15,6 +15,16 @@ function escapeHtml(input: string): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * Formata um endereço "from" com nome amigável quando presente.
+ * Nome é sanitizado para remover aspas duplas (que quebrariam o header).
+ */
+function formatFrom(email: string, name?: string | null): string {
+  if (!name || !name.trim()) return email;
+  const safeName = name.replace(/"/g, "").trim();
+  return `"${safeName}" <${email}>`;
+}
+
 async function createGmailTransporter(gmailUser: string, gmailAppPassword: string) {
   if (!gmailUser || !gmailAppPassword) {
     throw new Error(
@@ -59,7 +69,8 @@ async function selectTransporter(gmailUser?: string, gmailAppPassword?: string) 
 export async function sendTestEmail(
   toEmail: string,
   gmailUser?: string,
-  gmailAppPassword?: string
+  gmailAppPassword?: string,
+  senderName?: string | null
 ) {
   try {
     console.log("[Email] Sending test email to:", toEmail);
@@ -69,7 +80,7 @@ export async function sendTestEmail(
     );
 
     const info = await transport.sendMail({
-      from: fromEmail,
+      from: formatFrom(fromEmail, senderName),
       to: toEmail,
       subject: "Teste do Homework Assistant",
       html: `
@@ -109,7 +120,8 @@ export async function sendReminderEmail(
   taskTitle: string,
   dueDate: string,
   gmailUser?: string,
-  gmailAppPassword?: string
+  gmailAppPassword?: string,
+  senderName?: string | null
 ) {
   try {
     console.log("[Email] Sending reminder email to:", toEmail);
@@ -118,7 +130,7 @@ export async function sendReminderEmail(
     const safeDueDate = escapeHtml(dueDate);
 
     const info = await transport.sendMail({
-      from: fromEmail,
+      from: formatFrom(fromEmail, senderName),
       to: toEmail,
       subject: `Lembrete: ${taskTitle}`,
       html: `
@@ -145,7 +157,8 @@ export async function sendCompletedTaskEmail(
   taskTitle: string,
   content: string,
   gmailUser?: string,
-  gmailAppPassword?: string
+  gmailAppPassword?: string,
+  senderName?: string | null
 ) {
   try {
     console.log("[Email] Sending completed task email to:", toEmail);
@@ -157,7 +170,7 @@ export async function sendCompletedTaskEmail(
     const safeContent = escapeHtml(content);
 
     const info = await transport.sendMail({
-      from: fromEmail,
+      from: formatFrom(fromEmail, senderName),
       to: toEmail,
       subject: `Tarefa Concluída: ${taskTitle}`,
       html: `

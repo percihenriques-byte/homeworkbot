@@ -746,7 +746,8 @@ export const appRouter = router({
           return await sendTestEmail(
             input.toEmail,
             settings.gmailUser,
-            settings.gmailAppPassword
+            settings.gmailAppPassword,
+            settings.emailSenderName || ctx.user.name
           );
         } catch (error: any) {
           const raw = String(error?.message ?? "");
@@ -801,7 +802,8 @@ export const appRouter = router({
           task.title,
           task.completedContent,
           settings.gmailUser,
-          settings.gmailAppPassword
+          settings.gmailAppPassword,
+          settings.emailSenderName || ctx.user.name
         );
       }),
   }),
