@@ -587,8 +587,20 @@ export const appRouter = router({
           ],
         });
 
-        const guideContent = response.choices[0]?.message?.content || "";
-        const guideStr = typeof guideContent === 'string' ? guideContent : JSON.stringify(guideContent);
+        const raw = response.choices[0]?.message?.content;
+        const guideStr =
+          typeof raw === "string"
+            ? raw
+            : Array.isArray(raw)
+              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
+              : "";
+
+        if (!guideStr.trim()) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "A IA não conseguiu gerar o guia dessa vez. Tente novamente com mais conteúdo.",
+          });
+        }
 
         return await db.createStudyGuide({
           userId: ctx.user.id,
