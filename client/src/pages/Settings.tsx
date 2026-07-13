@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send, Eye, EyeOff } from "lucide-react";
+import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("integracao");
+  const { theme, toggleTheme } = useTheme();
   const { data: prefs } = trpc.preferences.get.useQuery();
   const { data: integrationSettings } = trpc.integrationSettings.get.useQuery();
   const updatePrefsMutation = trpc.preferences.update.useMutation();
@@ -147,9 +149,10 @@ export default function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="integracao">Integrações</TabsTrigger>
           <TabsTrigger value="ai">Estilo IA</TabsTrigger>
+          <TabsTrigger value="aparencia">Aparência</TabsTrigger>
         </TabsList>
 
         {/* INTEGRAÇÕES TAB */}
@@ -424,6 +427,39 @@ export default function Settings() {
               {updatePrefsMutation.isPending ? "Salvando..." : "Salvar Preferências"}
             </Button>
           </div>
+        </TabsContent>
+
+        {/* APARÊNCIA TAB */}
+        <TabsContent value="aparencia" className="space-y-4">
+          <Card className="bg-card/50 border-border p-6">
+            <h2 className="font-semibold text-foreground mb-4">Tema</h2>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground break-words">
+                O tema padrão é escuro (cyberpunk/neon). Escolha claro se preferir menos contraste.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant={theme === "light" ? "default" : "outline"}
+                  onClick={() => theme === "dark" && toggleTheme?.()}
+                  className="w-full sm:w-auto min-h-12 gap-2"
+                >
+                  <Sun className="w-4 h-4" />
+                  Claro
+                </Button>
+                <Button
+                  variant={theme === "dark" ? "default" : "outline"}
+                  onClick={() => theme === "light" && toggleTheme?.()}
+                  className="w-full sm:w-auto min-h-12 gap-2"
+                >
+                  <Moon className="w-4 h-4" />
+                  Escuro
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground break-words">
+                A preferência fica salva neste navegador — em outros dispositivos você pode escolher tema diferente.
+              </p>
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
