@@ -64,16 +64,18 @@ describe("parseIcs", () => {
     expect(events[0].dueDate?.toISOString()).toBe("2026-07-20T23:59:00.000Z");
   });
 
-  it("desfaz line folding (continuação com espaço)", () => {
+  it("desfaz line folding (RFC 5545: remove o espaço inicial e concatena)", () => {
+    // O fold do iCalendar quebra a 75 octetos, às vezes no meio de uma
+    // palavra. O unfolding remove o CRLF + 1 espaço/tab e junta SEM espaço.
     const ics = [
       "BEGIN:VEVENT",
       "SUMMARY:Trabalho de Ciências",
-      "DESCRIPTION:Primeira linha",
-      " continuação na mesma frase",
+      "DESCRIPTION:Estudar a parte de biolo",
+      " gia celular",
       "END:VEVENT",
     ].join("\r\n");
     const events = parseIcs(ics);
-    expect(events[0].description).toBe("Primeira linha continuação na mesma frase");
+    expect(events[0].description).toBe("Estudar a parte de biologia celular");
   });
 
   it("decodifica escapes de texto (\\, \\n)", () => {

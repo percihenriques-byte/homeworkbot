@@ -103,8 +103,8 @@ export const appRouter = router({
         const patch: any = { ...updates };
         if (updates.status === "concluída") {
           patch.completedAt = new Date();
-        } else if (updates.status && updates.status !== "concluída") {
-          // Reabriu a tarefa: limpa o completedAt.
+        } else if (updates.status) {
+          // Reabriu a tarefa (qualquer status != concluída): limpa o completedAt.
           patch.completedAt = null;
         }
         await db.updateTask(id, ctx.user.id, patch);
