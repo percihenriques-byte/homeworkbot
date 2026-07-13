@@ -83,6 +83,29 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Alerta de atrasadas — só aparece se houver, chama atenção */}
+      {stats.overdue > 0 && (
+        <Card className="p-4 border-red-500/50 bg-red-500/10 flex items-start gap-3 flex-wrap">
+          <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-foreground">
+              Você tem {stats.overdue} tarefa{stats.overdue === 1 ? "" : "s"} atrasada{stats.overdue === 1 ? "" : "s"}
+            </p>
+            <p className="text-sm text-muted-foreground break-words">
+              Vá em Minhas Tarefas para revisar e priorizar.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-11 w-full sm:w-auto"
+            onClick={() => navigate("/tarefas")}
+          >
+            Ver atrasadas
+          </Button>
+        </Card>
+      )}
+
       {/* Onboarding: aparece somente quando faltam passos importantes */}
       {(() => {
         const steps = [
