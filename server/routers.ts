@@ -532,7 +532,14 @@ export const appRouter = router({
   schedule: router({
     generate: protectedProcedure.mutation(async ({ ctx }) => {
       const tasks = await db.getTasksByUserId(ctx.user.id);
-      
+      const pendingTasks = tasks.filter((t) => !t.completedAt);
+      if (pendingTasks.length === 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Crie tarefas pendentes primeiro para gerar um cronograma.",
+        });
+      }
+
       const response = await invokeLLM({
         messages: [
           {

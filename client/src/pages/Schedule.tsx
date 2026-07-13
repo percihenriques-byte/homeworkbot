@@ -13,8 +13,9 @@ export default function Schedule() {
       await generateMutation.mutateAsync();
       await refetch();
       toast.success("Cronograma gerado com sucesso!");
-    } catch {
-      toast.error("Erro ao gerar cronograma");
+    } catch (error: any) {
+      // Propaga a mensagem do TRPCError (ex: precondição sem tarefas)
+      toast.error(error?.message || "Erro ao gerar cronograma");
     }
   };
 
