@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Image as ImageIcon, Loader2, Paperclip, Pencil, Plus, Send, Trash2, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, Paperclip, Pencil, Plus, Send, Trash2, X, Sparkles } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -412,6 +412,39 @@ export default function Chat() {
         {selectedConv ? (
           <>
             <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4">
+              {messages.length === 0 && !sendMessageMutation.isPending && (
+                <div className="max-w-lg mx-auto mt-6 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto glow-primary">
+                    <Sparkles className="w-7 h-7 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Oi! Eu sou o Jarvis de Estudos ✨</h3>
+                    <p className="text-sm text-muted-foreground break-words">
+                      Não só tiro dúvidas — eu <strong>faço</strong>: crio tarefas, gero flashcards, quizzes,
+                      guias e cronograma pra você. Peça em linguagem normal.
+                    </p>
+                  </div>
+                  <div className="grid gap-2 text-left">
+                    {[
+                      "Crie uma tarefa de prova de matemática pra sexta e gere 8 flashcards do assunto",
+                      "Gere um quiz de 5 perguntas sobre a Revolução Francesa",
+                      "Monte um cronograma de estudos com as minhas tarefas pendentes",
+                      "Faça um guia de estudo sobre fotossíntese",
+                    ].map((ex) => (
+                      <button
+                        key={ex}
+                        onClick={() => {
+                          setMessageInput(ex);
+                          messageInputRef.current?.focus();
+                        }}
+                        className="w-full text-left text-sm p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-muted transition-colors break-words min-h-11"
+                      >
+                        💡 {ex}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               {messages.map((msg: any, idx: number) => {
                 const content = typeof msg.content === "string" ? msg.content : String(msg.content ?? "");
                 const attachments: any[] = Array.isArray(msg.attachments) ? msg.attachments : [];
