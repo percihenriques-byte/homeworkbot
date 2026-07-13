@@ -50,6 +50,35 @@ Você também vê e gerencia esse cron no painel do Manus (execuções, pausar/r
 - `server/_core/index.ts` — monta a rota do cron.
 - Tarefas com prazo agendam lembrete em `tasks.create` / `tasks.update` / import `.ics`.
 
+## Sincronização automática do Toddle (buscar tarefas sozinho)
+
+O app busca as tarefas do Toddle sozinho, sem você fazer nada — a partir de um **link de calendário**.
+
+### Configuração (uma vez)
+1. No Toddle (ou Google/Outlook Calendar), copie o **link de assinatura do calendário** (procure "Assinar", "Subscribe", "iCal" ou ".ics").
+2. No app: **Configurações → Toddle → "Link do calendário (.ics)"**, cole o link e salve.
+3. (Opcional) Ligue **"Fazer as tarefas e me enviar por e-mail"** — aí cada tarefa nova é feita pela IA no seu estilo e enviada pro seu Gmail. Precisa do Gmail configurado.
+
+### Ativar o cron de sync (uma vez, após o Deploy)
+Assim como os lembretes, o cron só existe depois do Deploy. Rode **uma vez** no terminal Manus:
+
+```bash
+manus-heartbeat create \
+  --name sync-toddle \
+  --cron "0 0 */4 * * *" \
+  --path /api/scheduled/sync-toddle \
+  --description "Busca automatica de tarefas do Toddle (feed .ics)"
+```
+
+- `"0 0 */4 * * *"` = a cada 4 horas. Ajuste se quiser mais/menos frequente.
+- O manual também funciona: botão **"Sincronizar"** na página Tarefas puxa na hora.
+
+### Como funciona por dentro
+- `server/toddleSync.ts` — busca o link (`isSafeFeedUrl` bloqueia SSRF), parseia com `parseIcs`, deduplica por (título+dia), cria as tarefas e (se ligado) chama `completeAndEmailTask`.
+- `server/autoComplete.ts` — completa no estilo do usuário (memórias) e envia por e-mail.
+- Teto de 8 auto-completadas por execução (protege o timeout de 2 min do cron).
+- O link fica guardado em `integrationSettings.toddleApiKey` (reusa coluna existente — sem migração).
+
 ## E o WhatsApp?
 
 Enviar WhatsApp **automático** exige o gateway do próprio WhatsApp (Twilio/Meta), que é uma API
