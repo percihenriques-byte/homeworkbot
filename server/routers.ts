@@ -257,7 +257,14 @@ export const appRouter = router({
               ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
               : "";
 
-        messages.push({ role: "assistant", content: assistantMessage, timestamp: new Date() });
+        // Fallback amigável se o LLM retornar vazio. Preserva o histórico
+        // da conversa (evita mensagem "user" órfã sem resposta) e sinaliza
+        // ao usuário o que aconteceu.
+        const finalAssistantMessage =
+          assistantMessage.trim() ||
+          "Desculpe, não consegui gerar resposta agora. Pode reformular sua pergunta?";
+
+        messages.push({ role: "assistant", content: finalAssistantMessage, timestamp: new Date() });
 
         // Se era a primeira troca do usuário e o título ainda é o padrão
         // "Nova Conversa", renomeia com as primeiras palavras da mensagem.
@@ -275,7 +282,7 @@ export const appRouter = router({
 
         return {
           conversationId: input.conversationId,
-          message: assistantMessage,
+          message: finalAssistantMessage,
         };
       }),
 
