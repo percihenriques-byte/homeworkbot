@@ -108,7 +108,7 @@ export const appRouter = router({
         return { success: true };
       }),
     upcoming: protectedProcedure
-      .input(z.object({ daysAhead: z.number().optional() }))
+      .input(z.object({ daysAhead: z.number().int().min(1).max(365).optional() }))
       .query(async ({ ctx, input }) => {
         return await db.getUpcomingTasks(ctx.user.id, input.daysAhead || 7);
       }),
