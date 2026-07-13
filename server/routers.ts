@@ -259,10 +259,18 @@ export const appRouter = router({
           systemPrompt += `\n\nUse essas memórias para adaptar seu tom, estilo, abordagem e forma de responder.`;
         }
 
+        // Limita o payload enviado ao LLM às últimas N mensagens.
+        // Conversas longas eram enviadas por inteiro — custava caro e
+        // podia estourar o context window do modelo. 20 mensagens (10
+        // rodadas usuário↔assistente) cobre praticamente qualquer
+        // troca útil sem perder contexto imediato.
+        const MAX_CONTEXT_MESSAGES = 20;
+        const contextMessages = messages.slice(-MAX_CONTEXT_MESSAGES);
+
         // Monta o payload multimodal SÓ para a chamada ao LLM.
         const llmMessages = [
           { role: "system" as const, content: systemPrompt },
-          ...messages.map((m) => {
+          ...contextMessages.map((m) => {
             if (m.role === "user" && Array.isArray(m.attachments) && m.attachments.length > 0) {
               const parts: any[] = [{ type: "text", text: m.content }];
               for (const file of m.attachments) {
