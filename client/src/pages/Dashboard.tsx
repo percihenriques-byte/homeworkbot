@@ -75,13 +75,32 @@ export default function Dashboard() {
   const studyStats = useMemo(() => {
     const cards = (flashcards ?? []) as any[];
     const reviews = cards.reduce((sum, c) => sum + (Number(c.timesReviewed) || 0), 0);
+
+    // Dias ativos nos últimos 7 dias: coleta os dias (local) com qualquer
+    // atividade — tarefa concluída, flashcard revisado, conversa ou memória.
+    const now = Date.now();
+    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const activeDays = new Set<string>();
+    const mark = (ts: any) => {
+      if (!ts) return;
+      const t = new Date(ts).getTime();
+      if (Number.isFinite(t) && t >= weekAgo && t <= now) {
+        activeDays.add(new Date(ts).toLocaleDateString("pt-BR"));
+      }
+    };
+    (tasks ?? []).forEach((t: any) => mark(t.completedAt));
+    cards.forEach((c) => mark(c.lastReviewedAt));
+    (conversations ?? []).forEach((c: any) => mark(c.updatedAt));
+    (memories ?? []).forEach((m: any) => mark(m.createdAt));
+
     return {
       flashcards: cards.length,
       reviews,
       conversations: (conversations ?? []).length,
       memories: (memories ?? []).length,
+      activeDays: activeDays.size,
     };
-  }, [flashcards, conversations, memories]);
+  }, [tasks, flashcards, conversations, memories]);
 
   return (
     <div className="space-y-6">
@@ -235,9 +254,16 @@ export default function Dashboard() {
 
       {/* Estatísticas de estudo — atividade além das tarefas */}
       <div>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-          Seu estudo
-        </h2>
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            Seu estudo
+          </h2>
+          {studyStats.activeDays > 0 && (
+            <span className="text-sm font-medium text-amber-500">
+              🔥 Ativo em {studyStats.activeDays} de 7 dias
+            </span>
+          )}
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon={BookOpen} label="Flashcards" value={studyStats.flashcards} color="cyan" />
           <StatCard icon={Zap} label="Revisões feitas" value={studyStats.reviews} color="amber" />
