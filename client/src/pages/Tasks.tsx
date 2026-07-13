@@ -54,7 +54,22 @@ export default function Tasks() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas">("pendentes");
+  // Filtro persiste entre visitas via localStorage — usuario que trabalha
+  // sempre em "concluidas" nao precisa mudar toda vez que abre a pagina.
+  const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas">(() => {
+    if (typeof window === "undefined") return "pendentes";
+    const saved = localStorage.getItem("tasks-filter");
+    return saved === "todas" || saved === "pendentes" || saved === "concluidas"
+      ? saved
+      : "pendentes";
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("tasks-filter", filter);
+    } catch {
+      // Storage cheio ou privacy mode — ignora silenciosamente.
+    }
+  }, [filter]);
   const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
   const [formData, setFormData] = useState({
