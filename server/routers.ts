@@ -76,7 +76,8 @@ export const appRouter = router({
         id: z.number(),
         title: z.string().optional(),
         description: z.string().optional(),
-        dueDate: z.date().optional(),
+        // dueDate accepts Date to set, null to clear, undefined to leave alone.
+        dueDate: z.date().nullable().optional(),
         difficulty: z.enum(["fácil", "médio", "difícil"]).optional(),
         priority: z.enum(["baixa", "média", "alta"]).optional(),
         status: z.enum(["pendente", "em_progresso", "concluída", "atrasada"]).optional(),
