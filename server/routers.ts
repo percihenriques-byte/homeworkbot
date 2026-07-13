@@ -481,8 +481,22 @@ export const appRouter = router({
         const parsed = extractJson<any[]>(response.choices[0]?.message?.content);
         const flashcards = Array.isArray(parsed) ? parsed : [];
 
+        // Filtra: só aceita cards com question E answer não vazios.
+        // Impede que LLM retornando {question: null} ou {answer: ""}
+        // suje o banco com flashcards inúteis.
+        const validCards = flashcards.filter(
+          (c) => typeof c?.question === "string" && c.question.trim() && typeof c?.answer === "string" && c.answer.trim()
+        );
+
+        if (validCards.length === 0) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "A IA não conseguiu gerar flashcards dessa vez. Tente novamente ou forneça mais contexto.",
+          });
+        }
+
         const created = [];
-        for (const card of flashcards) {
+        for (const card of validCards) {
           const result = await db.createFlashcard({
             userId: ctx.user.id,
             deckId: input.deckId,
@@ -521,9 +535,29 @@ export const appRouter = router({
         });
 
         const parsed = extractJson<{ questions?: any[] }>(response.choices[0]?.message?.content);
-        const quizData = {
-          questions: Array.isArray(parsed?.questions) ? parsed.questions : [],
-        };
+        const rawQuestions = Array.isArray(parsed?.questions) ? parsed.questions : [];
+
+        // Filtra: cada questão precisa de question (string), options (array
+        // com pelo menos 2) e correctAnswer (string). Sem isso o QuizGame
+        // não consegue funcionar.
+        const validQuestions = rawQuestions.filter(
+          (q) =>
+            typeof q?.question === "string" &&
+            q.question.trim() &&
+            Array.isArray(q?.options) &&
+            q.options.length >= 2 &&
+            typeof q?.correctAnswer === "string" &&
+            q.correctAnswer.trim()
+        );
+
+        if (validQuestions.length === 0) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "A IA não conseguiu gerar o quiz dessa vez. Tente novamente com mais conteúdo.",
+          });
+        }
+
+        const quizData = { questions: validQuestions };
 
         return await db.createQuiz({
           userId: ctx.user.id,
