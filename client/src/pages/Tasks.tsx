@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +32,8 @@ export default function Tasks() {
   const updateTaskMutation = trpc.tasks.update.useMutation();
   const deleteTaskMutation = trpc.tasks.delete.useMutation();
   const toddleSyncMutation = trpc.toddle.sync.useMutation();
+  const importIcsMutation = trpc.toddle.importIcs.useMutation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const completeTaskMutation = trpc.chat.completeTask.useMutation();
   const sendCompletedEmailMutation = trpc.email.sendCompletedTask.useMutation();
   const createConvMutation = trpc.conversations.create.useMutation();
@@ -63,6 +65,36 @@ export default function Tasks() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
+
+  const handleIcsFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Limpa o input já pra permitir reimportar o mesmo arquivo depois.
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (limite 5MB).");
+      return;
+    }
+    try {
+      const content = await file.text();
+      const res = await importIcsMutation.mutateAsync({ content });
+      await refetch();
+      if (res.imported === 0) {
+        toast.info(
+          res.skipped > 0
+            ? `Nada novo: as ${res.skipped} tarefa(s) do arquivo já existem.`
+            : "Nenhuma tarefa importada."
+        );
+      } else {
+        toast.success(
+          `${res.imported} tarefa(s) importada(s)` +
+            (res.skipped > 0 ? ` — ${res.skipped} já existiam e foram puladas.` : ".")
+        );
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao importar o arquivo .ics");
+    }
+  };
 
   const handleToddleSync = async () => {
     try {
@@ -368,6 +400,35 @@ export default function Tasks() {
           </Button>
         </Card>
       )}
+
+      {/* Import por arquivo .ics — não precisa de credencial nem API externa.
+          Exporte o calendário do Toddle/Google/Outlook e importe aqui. */}
+      <Card className="p-4 flex items-start gap-3 flex-wrap">
+        <BookMarked className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-foreground">Importar tarefas de um arquivo (.ics)</p>
+          <p className="text-sm text-muted-foreground break-words">
+            Exporte o calendário do Toddle (ou Google/Outlook) e selecione o arquivo aqui. As tarefas já existentes são ignoradas automaticamente.
+          </p>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".ics,text/calendar"
+          className="hidden"
+          onChange={handleIcsFile}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 min-h-11 w-full sm:w-auto"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importIcsMutation.isPending}
+        >
+          <BookMarked className="w-4 h-4" />
+          {importIcsMutation.isPending ? "Importando..." : "Importar .ics"}
+        </Button>
+      </Card>
 
       {allTasks.length > 0 && (() => {
         const pct = allTasks.length > 0 ? Math.round((totalDone / allTasks.length) * 100) : 0;
