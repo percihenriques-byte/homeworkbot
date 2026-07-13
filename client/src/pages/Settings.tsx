@@ -77,8 +77,8 @@ export default function Settings() {
     try {
       await updatePrefsMutation.mutateAsync(prefsData);
       toast.success("Preferências salvas!");
-    } catch (error) {
-      toast.error("Erro ao salvar preferências");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao salvar preferências");
     }
   };
 
@@ -109,8 +109,8 @@ export default function Settings() {
     try {
       await updateIntegrationMutation.mutateAsync(integrationData);
       toast.success("Integrações configuradas!");
-    } catch (error) {
-      toast.error("Erro ao configurar integrações");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao configurar integrações");
     }
   };
 
