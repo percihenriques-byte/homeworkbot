@@ -9,6 +9,63 @@ import { storagePut } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { sendTestEmail } from "./email";
 
+/**
+ * Extrai um objeto/array JSON de uma resposta bruta do LLM.
+ * Cobre casos comuns: JSON puro, cercado por ```json ... ```, ou
+ * misturado com texto antes/depois. Retorna null se nao achar
+ * nada parseavel — nunca lanca.
+ */
+function extractJson<T = unknown>(raw: unknown): T | null {
+  const str =
+    typeof raw === "string"
+      ? raw
+      : Array.isArray(raw)
+        ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
+        : String(raw ?? "");
+  if (!str) return null;
+
+  // Tentativa 1: JSON puro
+  try {
+    return JSON.parse(str) as T;
+  } catch {}
+
+  // Tentativa 2: fenced code block ```json ... ``` ou ``` ... ```
+  const fenced = str.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced && fenced[1]) {
+    try {
+      return JSON.parse(fenced[1].trim()) as T;
+    } catch {}
+  }
+
+  // Tentativa 3: primeiro { ... } ou [ ... ] balanceado
+  const firstArray = str.indexOf("[");
+  const firstObject = str.indexOf("{");
+  const start =
+    firstArray === -1
+      ? firstObject
+      : firstObject === -1
+        ? firstArray
+        : Math.min(firstArray, firstObject);
+  if (start >= 0) {
+    const open = str[start];
+    const close = open === "[" ? "]" : "}";
+    let depth = 0;
+    for (let i = start; i < str.length; i++) {
+      if (str[i] === open) depth++;
+      else if (str[i] === close) {
+        depth--;
+        if (depth === 0) {
+          try {
+            return JSON.parse(str.slice(start, i + 1)) as T;
+          } catch {}
+          break;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 export const appRouter = router({
   system: systemRouter,
   auth: router({
@@ -362,7 +419,11 @@ export const appRouter = router({
           messages: [
             {
               role: "system",
-              content: `Você é um gerador de flashcards educacionais. Crie flashcards em formato JSON com a seguinte estrutura: [{"question": "...", "answer": "...", "difficulty": "fácil|médio|difícil"}] Crie entre 5 e 10 flashcards de alta qualidade sobre o conteúdo fornecido.`,
+              content:
+                `Você é um gerador de flashcards educacionais em Português (BR). ` +
+                `Retorne APENAS um array JSON puro, sem texto, sem markdown, sem cerca de código. ` +
+                `Formato: [{"question": "...", "answer": "...", "difficulty": "fácil"|"médio"|"difícil"}] ` +
+                `Gere entre 5 e 10 flashcards de alta qualidade.`,
             },
             {
               role: "user",
@@ -371,14 +432,8 @@ export const appRouter = router({
           ],
         });
 
-        const content = response.choices[0]?.message?.content;
-        let flashcards = [];
-        try {
-          const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
-          flashcards = JSON.parse(contentStr || "[]");
-        } catch (e) {
-          flashcards = [];
-        }
+        const parsed = extractJson<any[]>(response.choices[0]?.message?.content);
+        const flashcards = Array.isArray(parsed) ? parsed : [];
 
         const created = [];
         for (const card of flashcards) {
@@ -407,7 +462,10 @@ export const appRouter = router({
           messages: [
             {
               role: "system",
-              content: `Você é um gerador de quizzes. Retorne um JSON com array de perguntas.`,
+              content:
+                `Você é um gerador de quizzes educacionais em Português (BR). ` +
+                `Retorne APENAS um objeto JSON puro, sem texto, sem markdown. ` +
+                `Formato: {"questions": [{"question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": "A"}]}`,
             },
             {
               role: "user",
@@ -416,15 +474,10 @@ export const appRouter = router({
           ],
         });
 
-        const content = response.choices[0]?.message?.content;
-        const quizData = { questions: [] };
-        try {
-          const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
-          const parsed = JSON.parse(contentStr || "{}");
-          if (parsed.questions) quizData.questions = parsed.questions;
-        } catch (e) {
-          // fallback
-        }
+        const parsed = extractJson<{ questions?: any[] }>(response.choices[0]?.message?.content);
+        const quizData = {
+          questions: Array.isArray(parsed?.questions) ? parsed.questions : [],
+        };
 
         return await db.createQuiz({
           userId: ctx.user.id,
@@ -474,24 +527,27 @@ export const appRouter = router({
         messages: [
           {
             role: "system",
-            content: `Você é um planejador de estudos inteligente. Crie um cronograma de estudos personalizado em formato JSON.`,
+            content:
+              `Você é um planejador de estudos em Português (BR). ` +
+              `Retorne APENAS um objeto JSON puro, sem texto, sem markdown. ` +
+              `Formato: {"schedule": [{"date": "AAAA-MM-DD", "subject": "...", "tasks": ["..."], "duration": "1h30"}]} ` +
+              `Distribua as tarefas nos próximos 7 dias respeitando prioridade e data de entrega.`,
           },
           {
             role: "user",
-            content: `Crie um cronograma para estas tarefas: ${JSON.stringify(tasks.map(t => ({ title: t.title, dueDate: t.dueDate, priority: t.priority })))}`,
+            content: `Crie um cronograma para estas tarefas: ${JSON.stringify(
+              tasks
+                .filter((t) => !t.completedAt)
+                .map((t) => ({ title: t.title, dueDate: t.dueDate, priority: t.priority, subject: t.subject }))
+            )}`,
           },
         ],
       });
 
-      const scheduleData = { schedule: [] };
-      const content = response.choices[0]?.message?.content;
-      try {
-        const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
-        const parsed = JSON.parse(contentStr || "{}");
-        if (parsed.schedule) scheduleData.schedule = parsed.schedule;
-      } catch (e) {
-        // fallback
-      }
+      const parsed = extractJson<{ schedule?: any[] }>(response.choices[0]?.message?.content);
+      const scheduleData = {
+        schedule: Array.isArray(parsed?.schedule) ? parsed.schedule : [],
+      };
 
       return await db.createStudySchedule({
         userId: ctx.user.id,
