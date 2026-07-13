@@ -128,11 +128,37 @@ export default function Tasks() {
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
+    // Captura a tarefa completa ANTES de deletar, pra recriar no "Desfazer".
+    const removed = (tasks as any[] | undefined)?.find((t) => t.id === deleteConfirm.id);
     try {
       await deleteTaskMutation.mutateAsync({ id: deleteConfirm.id });
-      toast.success("Tarefa deletada!");
       setDeleteConfirm(null);
       refetch();
+      toast.success("Tarefa deletada!", {
+        action: removed
+          ? {
+              label: "Desfazer",
+              onClick: async () => {
+                try {
+                  await createTaskMutation.mutateAsync({
+                    title: String(removed.title ?? ""),
+                    description: removed.description || undefined,
+                    dueDate: removed.dueDate ? new Date(removed.dueDate) : undefined,
+                    difficulty: removed.difficulty as any,
+                    priority: removed.priority as any,
+                    type: removed.type as any,
+                    subject: removed.subject || undefined,
+                    notes: removed.notes || undefined,
+                  });
+                  await refetch();
+                  toast.success("Tarefa restaurada");
+                } catch (err: any) {
+                  toast.error(err?.message || "Não foi possível restaurar");
+                }
+              },
+            }
+          : undefined,
+      });
     } catch (error) {
       toast.error("Erro ao deletar tarefa");
     }
@@ -754,7 +780,7 @@ export default function Tasks() {
           <AlertDialogHeader>
             <AlertDialogTitle>Deletar esta tarefa?</AlertDialogTitle>
             <AlertDialogDescription className="break-words">
-              "{deleteConfirm?.title}" será removida permanentemente. Essa ação não pode ser desfeita.
+              "{deleteConfirm?.title}" será removida. Você terá alguns segundos para desfazer logo após.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

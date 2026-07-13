@@ -82,11 +82,34 @@ export default function Memories() {
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
+    // Captura a memória completa ANTES de deletar, pra conseguir recriar
+    // caso o usuário clique em "Desfazer".
+    const removed = (memories as any[] | undefined)?.find((m) => m.id === deleteConfirm.id);
     try {
       await deleteMutation.mutateAsync({ id: deleteConfirm.id });
       setDeleteConfirm(null);
       await refetch();
-      toast.success("Memória removida");
+      toast.success("Memória removida", {
+        action: removed
+          ? {
+              label: "Desfazer",
+              onClick: async () => {
+                try {
+                  await createMutation.mutateAsync({
+                    title: String(removed.title ?? ""),
+                    category: removed.category ? String(removed.category) : undefined,
+                    content: String(removed.content ?? ""),
+                    source: removed.source ? String(removed.source) : undefined,
+                  });
+                  await refetch();
+                  toast.success("Memória restaurada");
+                } catch (err: any) {
+                  toast.error(err?.message || "Não foi possível restaurar");
+                }
+              },
+            }
+          : undefined,
+      });
     } catch (error: any) {
       toast.error(error?.message || "Erro ao remover memória");
     }
