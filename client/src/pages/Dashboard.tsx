@@ -29,7 +29,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
-  const { data: tasks } = trpc.tasks.list.useQuery();
+  const { data: tasks, isLoading: tasksLoading } = trpc.tasks.list.useQuery();
   const { data: memories } = trpc.memories.list.useQuery();
   const { data: flashcards } = trpc.flashcards.list.useQuery({});
   const { data: conversations } = trpc.conversations.list.useQuery();
@@ -91,28 +91,28 @@ export default function Dashboard() {
         <StatCard
           icon={Clock}
           label="Pendentes"
-          value={stats.pending}
+          value={tasksLoading ? null : stats.pending}
           color="blue"
         />
         <StatCard
           icon={CheckCircle2}
           label="Concluídas"
-          value={stats.done}
+          value={tasksLoading ? null : stats.done}
           color="green"
         />
         <StatCard
           icon={AlertTriangle}
           label="Atrasadas"
-          value={stats.overdue}
+          value={tasksLoading ? null : stats.overdue}
           color="red"
-          highlight={stats.overdue > 0}
+          highlight={!tasksLoading && stats.overdue > 0}
         />
         <StatCard
           icon={Calendar}
           label="Vencem em 24h"
-          value={stats.dueSoon}
+          value={tasksLoading ? null : stats.dueSoon}
           color="amber"
-          highlight={stats.dueSoon > 0}
+          highlight={!tasksLoading && stats.dueSoon > 0}
         />
       </div>
 
@@ -229,7 +229,7 @@ export default function Dashboard() {
 type StatCardProps = {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  value: number;
+  value: number | null;
   color: "blue" | "green" | "red" | "amber";
   highlight?: boolean;
 };
@@ -250,7 +250,11 @@ function StatCard({ icon: Icon, label, value, color, highlight }: StatCardProps)
           {label}
         </p>
       </div>
-      <p className="text-2xl sm:text-3xl font-bold">{value}</p>
+      {value === null ? (
+        <div className="h-8 sm:h-9 w-12 rounded bg-muted animate-pulse" />
+      ) : (
+        <p className="text-2xl sm:text-3xl font-bold">{value}</p>
+      )}
     </Card>
   );
 }
