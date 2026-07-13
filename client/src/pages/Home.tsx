@@ -29,15 +29,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-card">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-slate-950/50 backdrop-blur-md border-b border-slate-800">
+      <nav className="fixed top-0 w-full z-50 bg-background/70 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Brain className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center glow-primary">
+              <Brain className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-white">Homework Assistant</span>
+            <span className="font-bold text-xl text-foreground">Homework Assistant</span>
           </div>
           <a href={getLoginUrl()}>
             <Button className="gap-2 min-h-11">
@@ -51,16 +51,16 @@ export default function Home() {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-slate-800/50 border border-slate-700">
-            <Sparkles className="w-4 h-4 text-blue-400" />
-            <span className="text-sm text-slate-300">Inteligência Artificial para seus Estudos</span>
+          <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-card/50 border border-border">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm text-muted-foreground">Inteligência Artificial para seus Estudos</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 leading-tight break-words">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground mb-6 leading-tight break-words">
             Seu Assistente de Estudos Inteligente
           </h1>
 
-          <p className="text-lg sm:text-xl text-slate-300 mb-8 max-w-2xl mx-auto break-words">
+          <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto break-words">
             Organize suas tarefas, converse com IA, gere flashcards e cronogramas personalizados. Tudo em um único lugar, em Português.
           </p>
 
@@ -79,76 +79,18 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-900/50">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card/30">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white text-center mb-12 sm:mb-16 break-words">Recursos Poderosos</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-center mb-12 sm:mb-16 break-words">Recursos Poderosos</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <Card className="bg-slate-800/50 border-slate-700 hover:border-blue-500/50 transition-all p-6">
-              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4">
-                <BookOpen className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className="font-semibold text-white mb-2">Gerenciamento de Tarefas</h3>
-              <p className="text-slate-400 text-sm">
-                Crie, organize e priorize suas tarefas, trabalhos e provas com facilidade.
-              </p>
-            </Card>
-
-            {/* Feature 2 */}
-            <Card className="bg-slate-800/50 border-slate-700 hover:border-purple-500/50 transition-all p-6">
-              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center mb-4">
-                <MessageSquare className="w-6 h-6 text-purple-400" />
-              </div>
-              <h3 className="font-semibold text-white mb-2">Chat com IA</h3>
-              <p className="text-slate-400 text-sm">
-                Converse com um assistente inteligente que explica conceitos e resolve problemas.
-              </p>
-            </Card>
-
-            {/* Feature 3 */}
-            <Card className="bg-slate-800/50 border-slate-700 hover:border-pink-500/50 transition-all p-6">
-              <div className="w-12 h-12 rounded-lg bg-pink-500/10 flex items-center justify-center mb-4">
-                <Zap className="w-6 h-6 text-pink-400" />
-              </div>
-              <h3 className="font-semibold text-white mb-2">Ferramentas de Estudo</h3>
-              <p className="text-slate-400 text-sm">
-                Gere flashcards, quizzes e guias de estudo automaticamente com IA.
-              </p>
-            </Card>
-
-            {/* Feature 4 */}
-            <Card className="bg-slate-800/50 border-slate-700 hover:border-green-500/50 transition-all p-6">
-              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center mb-4">
-                <Calendar className="w-6 h-6 text-green-400" />
-              </div>
-              <h3 className="font-semibold text-white mb-2">Cronograma Personalizado</h3>
-              <p className="text-slate-400 text-sm">
-                Receba cronogramas de estudo inteligentes baseados em suas tarefas.
-              </p>
-            </Card>
-
-            {/* Feature 5 */}
-            <Card className="bg-slate-800/50 border-slate-700 hover:border-yellow-500/50 transition-all p-6">
-              <div className="w-12 h-12 rounded-lg bg-yellow-500/10 flex items-center justify-center mb-4">
-                <FileText className="w-6 h-6 text-yellow-400" />
-              </div>
-              <h3 className="font-semibold text-white mb-2">Upload de Arquivos</h3>
-              <p className="text-slate-400 text-sm">
-                Envie imagens e documentos para análise e discussão com a IA.
-              </p>
-            </Card>
-
-            {/* Feature 6 */}
-            <Card className="bg-slate-800/50 border-slate-700 hover:border-cyan-500/50 transition-all p-6">
-              <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center mb-4">
-                <Brain className="w-6 h-6 text-cyan-400" />
-              </div>
-              <h3 className="font-semibold text-white mb-2">Personalização</h3>
-              <p className="text-slate-400 text-sm">
-                A IA aprende seu estilo e adapta respostas conforme você interage.
-              </p>
-            </Card>
+            <FeatureCard icon={BookOpen} title="Gerenciamento de Tarefas" description="Crie, organize e priorize suas tarefas, trabalhos e provas com facilidade." tint="primary" />
+            <FeatureCard icon={MessageSquare} title="Chat com IA" description="Converse com um assistente inteligente que explica conceitos e resolve problemas." tint="accent" />
+            <FeatureCard icon={Zap} title="Ferramentas de Estudo" description="Gere flashcards, quizzes e guias de estudo automaticamente com IA." tint="accent" />
+            <FeatureCard icon={Calendar} title="Cronograma Personalizado" description="Receba cronogramas de estudo inteligentes baseados em suas tarefas." tint="primary" />
+            <FeatureCard icon={FileText} title="Upload de Arquivos" description="Envie imagens e documentos para análise e discussão com a IA." tint="primary" />
+            <FeatureCard icon={Brain} title="Personalização" description="A IA aprende seu estilo e adapta respostas conforme você interage." tint="accent" />
           </div>
         </div>
       </section>
@@ -156,7 +98,7 @@ export default function Home() {
       {/* Benefits Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-white text-center mb-16">Por Que Escolher Homework Assistant?</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-center mb-12 sm:mb-16 break-words">Por Que Escolher Homework Assistant?</h2>
 
           <div className="space-y-6">
             {[
@@ -177,13 +119,13 @@ export default function Home() {
                 description: "Acesse de qualquer dispositivo, a qualquer hora. Funciona perfeitamente no mobile.",
               },
             ].map((benefit, idx) => (
-              <div key={idx} className="flex gap-4 p-4 rounded-lg bg-slate-800/30 border border-slate-700/50 hover:border-slate-600 transition-colors">
-                <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-1">
-                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+              <div key={idx} className="flex gap-4 p-4 rounded-lg bg-card/30 border border-border hover:border-primary/50 transition-colors">
+                <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-1">
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-white mb-1">{benefit.title}</h3>
-                  <p className="text-slate-400 text-sm">{benefit.description}</p>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground mb-1 break-words">{benefit.title}</h3>
+                  <p className="text-muted-foreground text-sm break-words">{benefit.description}</p>
                 </div>
               </div>
             ))}
@@ -192,10 +134,10 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-t border-slate-700">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/10 to-accent/10 border-t border-border">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 break-words">Pronto para Revolucionar Seus Estudos?</h2>
-          <p className="text-lg sm:text-xl text-slate-300 mb-8 break-words">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-6 break-words">Pronto para Revolucionar Seus Estudos?</h2>
+          <p className="text-lg sm:text-xl text-muted-foreground mb-8 break-words">
             Crie sua conta agora e comece a estudar de forma inteligente.
           </p>
           <a href={getLoginUrl()}>
@@ -208,11 +150,33 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-700 py-8 px-4 sm:px-6 lg:px-8 bg-slate-950/50">
-        <div className="max-w-6xl mx-auto text-center text-slate-400 text-sm">
+      <footer className="border-t border-border py-8 px-4 sm:px-6 lg:px-8 bg-card/50">
+        <div className="max-w-6xl mx-auto text-center text-muted-foreground text-sm">
           <p>© 2026 Homework Assistant. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
+  );
+}
+
+type FeatureCardProps = {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  tint: "primary" | "accent";
+};
+
+function FeatureCard({ icon: Icon, title, description, tint }: FeatureCardProps) {
+  const border = tint === "primary" ? "hover:border-primary/50" : "hover:border-accent/50";
+  const bg = tint === "primary" ? "bg-primary/10" : "bg-accent/10";
+  const text = tint === "primary" ? "text-primary" : "text-accent";
+  return (
+    <Card className={`bg-card/50 border-border ${border} transition-all p-6`}>
+      <div className={`w-12 h-12 rounded-lg ${bg} flex items-center justify-center mb-4`}>
+        <Icon className={`w-6 h-6 ${text}`} />
+      </div>
+      <h3 className="font-semibold text-foreground mb-2 break-words">{title}</h3>
+      <p className="text-muted-foreground text-sm break-words">{description}</p>
+    </Card>
   );
 }
