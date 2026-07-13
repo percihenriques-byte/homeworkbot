@@ -167,6 +167,23 @@ export default function Chat() {
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    if (!selectedConvId) return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    const files: File[] = [];
+    for (const item of Array.from(items)) {
+      if (item.kind === "file") {
+        const f = item.getAsFile();
+        if (f) files.push(f);
+      }
+    }
+    if (files.length > 0) {
+      e.preventDefault(); // não cola o filename como texto
+      await processFiles(files);
+    }
+  };
+
   const removePendingAttachment = (idx: number) => {
     setPendingAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
@@ -457,6 +474,7 @@ export default function Chat() {
                       handleSendMessage();
                     }
                   }}
+                  onPaste={handlePaste}
                   placeholder={pendingAttachments.length > 0 ? "Descreva o anexo (opcional)..." : "Digite sua mensagem..."}
                   disabled={sendMessageMutation.isPending}
                   className="w-full md:flex-1 min-h-11"
@@ -465,6 +483,7 @@ export default function Chat() {
                   onClick={handleSendMessage}
                   disabled={
                     sendMessageMutation.isPending ||
+                    uploading ||
                     (!messageInput.trim() && pendingAttachments.length === 0)
                   }
                   className="w-full md:w-auto min-h-11"
