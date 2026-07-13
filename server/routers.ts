@@ -70,13 +70,13 @@ export const appRouter = router({
         return result;
       }),
     get: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .query(async ({ ctx, input }) => {
         return await db.getTaskById(input.id, ctx.user.id);
       }),
     update: protectedProcedure
       .input(z.object({
-        id: z.number(),
+        id: z.number().int().positive(),
         title: z.string().min(1).max(255).optional(),
         description: z.string().max(2000).optional(),
         // dueDate accepts Date to set, null to clear, undefined to leave alone.
@@ -105,7 +105,7 @@ export const appRouter = router({
         return await db.getTaskById(id, ctx.user.id);
       }),
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteTask(input.id, ctx.user.id);
         return { success: true };
@@ -150,12 +150,12 @@ export const appRouter = router({
         return result;
       }),
     get: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .query(async ({ ctx, input }) => {
         return await db.getConversationById(input.id, ctx.user.id);
       }),
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteConversation(input.id, ctx.user.id);
         return { success: true };
@@ -315,7 +315,7 @@ export const appRouter = router({
     // salva o resultado no campo completedContent da tarefa (que já
     // existe no schema).
     completeTask: protectedProcedure
-      .input(z.object({ taskId: z.number() }))
+      .input(z.object({ taskId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         const task = await db.getTaskById(input.taskId, ctx.user.id);
         if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
@@ -764,7 +764,7 @@ export const appRouter = router({
       }),
     update: protectedProcedure
       .input(z.object({
-        id: z.number(),
+        id: z.number().int().positive(),
         title: z.string().min(1).max(255).optional(),
         category: z.string().max(255).optional(),
         content: z.string().min(1).max(200000).optional(),
@@ -776,7 +776,7 @@ export const appRouter = router({
         return await db.getUserMemoryById(id, ctx.user.id);
       }),
     delete: protectedProcedure
-      .input(z.object({ id: z.number() }))
+      .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteUserMemory(input.id, ctx.user.id);
         return { success: true };
@@ -789,12 +789,12 @@ export const appRouter = router({
     }),
     create: protectedProcedure
       .input(z.object({
-        taskId: z.number(),
+        taskId: z.number().int().positive(),
         reminderTime: z.date(),
       }))
       .mutation(async ({ ctx, input }) => {
         const task = await db.getTaskById(input.taskId, ctx.user.id);
-        if (!task) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
 
         return await db.createEmailReminder({
           userId: ctx.user.id,
@@ -909,7 +909,7 @@ export const appRouter = router({
     // o email do usuário. Usado depois do "Completar com IA" pra ele
     // receber o texto no email e imprimir/entregar.
     sendCompletedTask: protectedProcedure
-      .input(z.object({ taskId: z.number() }))
+      .input(z.object({ taskId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         const task = await db.getTaskById(input.taskId, ctx.user.id);
         if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
