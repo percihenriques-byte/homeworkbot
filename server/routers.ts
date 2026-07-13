@@ -319,11 +319,19 @@ export const appRouter = router({
 
         // Primeira chamada COM ferramentas: o modelo decide se age (criar
         // tarefa, gerar material...) ou só responde. toolChoice "auto".
-        const response = await invokeLLM({
-          messages: llmMessages,
-          tools: AGENT_TOOLS,
-          toolChoice: "auto",
-        });
+        // Rede de segurança: se o provedor falhar com ferramentas, cai numa
+        // chamada normal — o chat NUNCA quebra por causa do tool-calling.
+        let response;
+        try {
+          response = await invokeLLM({
+            messages: llmMessages,
+            tools: AGENT_TOOLS,
+            toolChoice: "auto",
+          });
+        } catch (toolErr) {
+          console.warn("[chat] tool-calling falhou, caindo pra chamada simples:", toolErr);
+          response = await invokeLLM({ messages: llmMessages });
+        }
         const choice = response.choices[0]?.message;
         const toolCalls: any[] = Array.isArray((choice as any)?.tool_calls)
           ? (choice as any).tool_calls
