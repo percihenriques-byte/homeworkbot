@@ -11,6 +11,7 @@ import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { extractJson } from "./utils/extractJson";
 import { syncTaskReminder } from "./reminders";
+import { normalize } from "@shared/normalize";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -106,6 +107,21 @@ export const AGENT_TOOLS = [
       name: "listar_tarefas",
       description: "Lista as tarefas atuais do usuário (título, prazo, status). Use pra ter contexto antes de agir ou quando ele perguntar o que tem pra fazer.",
       parameters: { type: "object", properties: {} },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "marcar_tarefa_concluida",
+      description:
+        "Marca uma tarefa pendente do usuário como concluída, identificando-a pelo título (ou parte dele). Use quando ele disser que terminou/fez uma tarefa.",
+      parameters: {
+        type: "object",
+        properties: {
+          titulo: { type: "string", description: "Título (ou trecho) da tarefa que o usuário concluiu" },
+        },
+        required: ["titulo"],
+      },
     },
   },
 ];
@@ -308,6 +324,24 @@ export async function executeAgentTool(
           summary: pending.length === 0 ? "O usuário não tem tarefas pendentes." : `Tarefas pendentes (${pending.length}):\n${lines}`,
           data: { count: pending.length },
         };
+      }
+
+      case "marcar_tarefa_concluida": {
+        const alvo = normalize(String(args.titulo || ""));
+        if (!alvo) return { ok: false, summary: "Não marquei: não informou qual tarefa." };
+        const tasks = await db.getTasksByUserId(userId);
+        const pendentes = tasks.filter((t) => t.status !== "concluída");
+        // Casa por título: primeiro tenta match exato normalizado, senão
+        // por conteúdo (a tarefa cujo título contém o texto, ou vice-versa).
+        const match =
+          pendentes.find((t) => normalize(t.title) === alvo) ||
+          pendentes.find((t) => normalize(t.title).includes(alvo) || alvo.includes(normalize(t.title)));
+        if (!match) {
+          return { ok: false, summary: `Não achei uma tarefa pendente que combine com "${args.titulo}".` };
+        }
+        await db.updateTask(match.id, userId, { status: "concluída", completedAt: new Date() } as any);
+        await db.deleteUnsentRemindersForTask(userId, match.id);
+        return { ok: true, summary: `Tarefa "${match.title}" marcada como concluída. 🎉`, data: { id: match.id } };
       }
 
       default:
