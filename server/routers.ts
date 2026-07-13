@@ -812,14 +812,14 @@ export const appRouter = router({
     }),
     update: protectedProcedure
       .input(z.object({
-        emailSenderEmail: z.string().optional(),
-        emailSenderName: z.string().optional(),
-        whatsappPhoneNumber: z.string().optional(),
-        toddleEmail: z.string().optional(),
-        toddlePassword: z.string().optional(),
-        toddleProvider: z.string().optional(),
-        gmailUser: z.string().optional(),
-        gmailAppPassword: z.string().optional(),
+        emailSenderEmail: z.union([z.literal(""), z.string().email()]).optional(),
+        emailSenderName: z.string().max(255).optional(),
+        whatsappPhoneNumber: z.string().max(20).optional(),
+        toddleEmail: z.string().max(320).optional(),
+        toddlePassword: z.string().max(500).optional(),
+        toddleProvider: z.string().max(100).optional(),
+        gmailUser: z.union([z.literal(""), z.string().email()]).optional(),
+        gmailAppPassword: z.string().max(500).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return await db.createOrUpdateIntegrationSettings(ctx.user.id, input);
