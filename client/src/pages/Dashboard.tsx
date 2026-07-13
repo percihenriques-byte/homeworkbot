@@ -15,6 +15,8 @@ import {
   Clock,
   Plus,
   Brain,
+  Settings as SettingsIcon,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { normalize } from "@shared/normalize";
@@ -27,6 +29,7 @@ export default function Dashboard() {
   const { data: memories } = trpc.memories.list.useQuery();
   const { data: flashcards } = trpc.flashcards.list.useQuery({});
   const { data: conversations } = trpc.conversations.list.useQuery();
+  const { data: integrationSettings } = trpc.integrationSettings.get.useQuery();
 
   const stats = useMemo(() => {
     const all = tasks ?? [];
@@ -79,6 +82,68 @@ export default function Dashboard() {
           Visão geral do seu progresso e próximos prazos.
         </p>
       </div>
+
+      {/* Onboarding: aparece somente quando faltam passos importantes */}
+      {(() => {
+        const steps = [
+          {
+            label: "Configurar Gmail para receber tarefas por email",
+            done: Boolean(integrationSettings?.gmailUser && integrationSettings?.gmailAppPassword),
+            path: "/configuracoes",
+            icon: SettingsIcon,
+          },
+          {
+            label: "Adicionar sua primeira Memória (IA aprende seu estilo)",
+            done: (memories?.length ?? 0) > 0,
+            path: "/memorias",
+            icon: Brain,
+          },
+          {
+            label: "Criar sua primeira tarefa",
+            done: (tasks?.length ?? 0) > 0,
+            path: "/tarefas",
+            icon: BookOpen,
+          },
+          {
+            label: "Começar uma conversa com a IA",
+            done: (conversations?.length ?? 0) > 0,
+            path: "/chat",
+            icon: MessageSquare,
+          },
+        ];
+        const doneCount = steps.filter((s) => s.done).length;
+        if (doneCount === steps.length) return null; // tudo pronto: some
+        return (
+          <Card className="p-4 border-primary/40">
+            <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+              <h2 className="font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                Primeiros passos ({doneCount}/{steps.length})
+              </h2>
+              <Progress value={(doneCount / steps.length) * 100} className="w-full sm:w-40" />
+            </div>
+            <ul className="space-y-2">
+              {steps.map((step) => (
+                <li key={step.path}>
+                  <button
+                    className={`w-full flex items-center gap-3 p-3 rounded transition-colors min-h-11 text-left ${step.done ? "opacity-60" : "hover:bg-muted"}`}
+                    onClick={() => navigate(step.path)}
+                    disabled={step.done}
+                  >
+                    {step.done ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <step.icon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    )}
+                    <span className={`text-sm break-words flex-1 ${step.done ? "line-through" : ""}`}>{step.label}</span>
+                    {!step.done && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        );
+      })()}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
