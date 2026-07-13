@@ -32,7 +32,11 @@ export default function Schedule() {
           className="gap-2 min-h-11"
         >
           <RefreshCw className={`w-4 h-4 ${generateMutation.isPending ? "animate-spin" : ""}`} />
-          {generateMutation.isPending ? "Gerando..." : "Gerar Cronograma"}
+          {generateMutation.isPending
+            ? "Gerando..."
+            : scheduleItems.length > 0
+              ? "Regenerar Cronograma"
+              : "Gerar Cronograma"}
         </Button>
       </div>
 
