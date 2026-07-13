@@ -17,7 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Check, CircleCheck, Circle, Sparkles, Copy, Mail, MessageSquare, RotateCcw, CopyPlus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { normalize } from "@shared/normalize";
@@ -135,6 +135,25 @@ export default function Tasks() {
       refetch();
     } catch (error) {
       toast.error("Erro ao deletar tarefa");
+    }
+  };
+
+  const handleDuplicateTask = async (task: any) => {
+    try {
+      await createTaskMutation.mutateAsync({
+        title: `${task.title} (cópia)`,
+        description: task.description || undefined,
+        dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+        difficulty: task.difficulty as any,
+        priority: task.priority as any,
+        type: task.type as any,
+        subject: task.subject || undefined,
+        notes: task.notes || undefined,
+      });
+      await refetch();
+      toast.success("Tarefa duplicada");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao duplicar tarefa");
     }
   };
 
@@ -597,6 +616,17 @@ export default function Tasks() {
                         </Button>
                       </>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11"
+                      aria-label="Duplicar tarefa"
+                      title="Duplicar tarefa"
+                      onClick={() => handleDuplicateTask(task)}
+                      disabled={createTaskMutation.isPending}
+                    >
+                      <CopyPlus className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
