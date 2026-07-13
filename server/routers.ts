@@ -32,7 +32,7 @@ export const appRouter = router({
       .input(z.object({
         // Aceita "" (clear) ou email valido. Antes rejeitava "" com
         // "invalid email" — nao dava pra limpar o campo depois de setar.
-        smtpEmail: z.union([z.literal(""), z.string().email()]).optional(),
+        smtpEmail: z.union([z.literal(""), z.string().email({ message: "Formato de email inválido" })]).optional(),
         smtpPassword: z.string().max(500).optional(),
         smtpHost: z.string().max(255).optional(),
         smtpPort: z.number().int().min(1).max(65535).optional(),
@@ -804,13 +804,13 @@ export const appRouter = router({
     }),
     update: protectedProcedure
       .input(z.object({
-        emailSenderEmail: z.union([z.literal(""), z.string().email()]).optional(),
+        emailSenderEmail: z.union([z.literal(""), z.string().email({ message: "Formato de email inválido" })]).optional(),
         emailSenderName: z.string().max(255).optional(),
         whatsappPhoneNumber: z.string().max(20).optional(),
         toddleEmail: z.string().max(320).optional(),
         toddlePassword: z.string().max(500).optional(),
         toddleProvider: z.string().max(100).optional(),
-        gmailUser: z.union([z.literal(""), z.string().email()]).optional(),
+        gmailUser: z.union([z.literal(""), z.string().email({ message: "Formato de email inválido" })]).optional(),
         gmailAppPassword: z.string().max(500).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -846,7 +846,7 @@ export const appRouter = router({
   email: router({
     sendTest: protectedProcedure
       .input(z.object({
-        toEmail: z.string().email(),
+        toEmail: z.string().email({ message: "Formato de email inválido" }),
       }))
       .mutation(async ({ ctx, input }) => {
         const settings = await db.getIntegrationSettings(ctx.user.id);
