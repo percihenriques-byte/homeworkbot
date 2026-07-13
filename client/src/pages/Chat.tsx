@@ -423,8 +423,26 @@ export default function Chat() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground p-4 text-center">
-            <p>Selecione uma conversa para começar ou crie uma nova.</p>
+          <div className="flex-1 flex items-center justify-center p-4 text-center">
+            <div className="max-w-sm space-y-3">
+              <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                <Send className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="font-semibold text-lg">Comece uma conversa</h2>
+              <p className="text-sm text-muted-foreground break-words">
+                {conversations && conversations.length === 0
+                  ? "Ainda não há nenhuma conversa. Crie a primeira e pergunte qualquer coisa à IA."
+                  : "Selecione uma conversa na barra lateral ou crie uma nova."}
+              </p>
+              <Button
+                onClick={handleCreateConversation}
+                disabled={createConvMutation.isPending}
+                className="min-h-11 gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {createConvMutation.isPending ? "Criando..." : "Nova conversa"}
+              </Button>
+            </div>
           </div>
         )}
       </div>
