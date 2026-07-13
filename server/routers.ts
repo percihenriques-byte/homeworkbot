@@ -726,6 +726,26 @@ export const appRouter = router({
     get: protectedProcedure.query(async ({ ctx }) => {
       return await db.getLatestStudySchedule(ctx.user.id);
     }),
+
+    // Marca/desmarca um dia do cronograma como concluído. Persiste o flag
+    // `done` dentro do JSON do dia, sem regenerar o cronograma inteiro.
+    setDayDone: protectedProcedure
+      .input(z.object({ index: z.number().int().min(0), done: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        const latest = await db.getLatestStudySchedule(ctx.user.id);
+        if (!latest || !Array.isArray(latest.schedule)) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Nenhum cronograma para atualizar.",
+          });
+        }
+        const days = (latest.schedule as any[]).slice();
+        if (input.index >= days.length) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Dia inválido." });
+        }
+        days[input.index] = { ...days[input.index], done: input.done };
+        return await db.updateLatestStudySchedule(ctx.user.id, days);
+      }),
   }),
 
   upload: router({

@@ -334,12 +334,26 @@ export async function createStudySchedule(schedule: InsertStudySchedule) {
 export async function getLatestStudySchedule(userId: number) {
   const db = await getDb();
   if (!db) return undefined;
-  
+
   const result = await db.select().from(studySchedules)
     .where(eq(studySchedules.userId, userId))
     .orderBy(desc(studySchedules.createdAt))
     .limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// Sobrescreve o array de dias do cronograma mais recente do usuário.
+// Usado pra persistir marcações (ex: dia concluído) sem regenerar tudo.
+export async function updateLatestStudySchedule(userId: number, schedule: any) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const latest = await getLatestStudySchedule(userId);
+  if (!latest) return undefined;
+  await db.update(studySchedules)
+    .set({ schedule })
+    .where(eq(studySchedules.id, latest.id));
+  return await getLatestStudySchedule(userId);
 }
 
 // Quizzes
