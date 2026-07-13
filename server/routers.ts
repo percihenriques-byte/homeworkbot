@@ -120,10 +120,24 @@ export const appRouter = router({
     }),
     create: protectedProcedure
       .input(z.object({
-        title: z.string().optional(),
-        taskId: z.number().optional(),
+        title: z.string().max(255).optional(),
+        taskId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Se taskId veio, valida que a tarefa existe e pertence ao user.
+        // Antes qualquer taskId era aceito — se o cliente forjasse um id
+        // fora do escopo, criava conversa "linkada" a nada (ou ao id de
+        // outro usuario, o que seria vazamento no chat.message quando
+        // for buscar taskContext).
+        if (input.taskId !== undefined) {
+          const task = await db.getTaskById(input.taskId, ctx.user.id);
+          if (!task) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "Tarefa vinculada não encontrada.",
+            });
+          }
+        }
         const result = await db.createConversation({
           userId: ctx.user.id,
           title: input.title || "Nova Conversa",
@@ -144,7 +158,7 @@ export const appRouter = router({
         return { success: true };
       }),
     rename: protectedProcedure
-      .input(z.object({ id: z.number(), title: z.string().min(1).max(255) }))
+      .input(z.object({ id: z.number().int().positive(), title: z.string().min(1).max(255) }))
       .mutation(async ({ ctx, input }) => {
         await db.updateConversation(input.id, ctx.user.id, { title: input.title });
         return await db.getConversationById(input.id, ctx.user.id);
