@@ -188,6 +188,7 @@ function DashboardLayoutContent({
             <SidebarMenu className="px-2 py-1">
               {menuItems.map(item => {
                 const isActive = location === item.path;
+                const ItemIcon = item.icon;
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton
@@ -196,7 +197,7 @@ function DashboardLayoutContent({
                       tooltip={item.label}
                       className={`h-10 transition-all font-normal`}
                     >
-                      <item.icon
+                      <ItemIcon
                         className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
                       />
                       <span>{item.label}</span>
