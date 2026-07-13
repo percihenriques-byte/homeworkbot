@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Wand2, BookOpen, HelpCircle, Trash2, ChevronLeft, ChevronRight, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import { Wand2, BookOpen, HelpCircle, Trash2, ChevronLeft, ChevronRight, RotateCcw, CheckCircle2, XCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 
@@ -113,6 +113,23 @@ export default function StudyTools() {
       toast.success("Flashcard removido");
     } catch (error: any) {
       toast.error(error?.message || "Erro ao remover flashcard");
+    }
+  };
+
+  // Exporta um deck como texto (Pergunta / Resposta) pra área de
+  // transferência — o usuário cola em WhatsApp, email, docs, etc. Sem
+  // backend nem link público: compartilhar é copiar e colar.
+  const handleExportDeck = async (subject: string, cards: any[]) => {
+    const text =
+      `Flashcards — ${subject}\n\n` +
+      cards
+        .map((c: any, i: number) => `${i + 1}. P: ${c.question}\n   R: ${c.answer}`)
+        .join("\n\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(`${cards.length} flashcard(s) copiado(s) — cole onde quiser`);
+    } catch {
+      toast.error("Não foi possível copiar. Seu navegador pode ter bloqueado.");
     }
   };
 
@@ -306,17 +323,30 @@ export default function StudyTools() {
                     <p className="text-sm font-medium">
                       {subj} <span className="text-muted-foreground">({cards.length})</span>
                     </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="min-h-11"
-                      onClick={() => {
-                        setStudyIndex(0);
-                        setStudyMode({ subject: subj });
-                      }}
-                    >
-                      Estudar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="min-h-11 gap-2"
+                        onClick={() => handleExportDeck(subj, cards)}
+                        aria-label={`Compartilhar flashcards de ${subj}`}
+                        title="Copiar deck pra compartilhar"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Compartilhar</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="min-h-11"
+                        onClick={() => {
+                          setStudyIndex(0);
+                          setStudyMode({ subject: subj });
+                        }}
+                      >
+                        Estudar
+                      </Button>
+                    </div>
                   </div>
                   <ul className="space-y-1">
                     {cards.slice(0, 3).map((c: any) => (
