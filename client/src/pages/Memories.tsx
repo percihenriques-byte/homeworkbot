@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Trash2, Brain } from "lucide-react";
+import { Plus, Trash2, Brain, Pencil } from "lucide-react";
 
 type MemoryFormData = {
   title: string;
@@ -31,25 +31,52 @@ const emptyForm: MemoryFormData = { title: "", category: "", content: "", source
 export default function Memories() {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<MemoryFormData>(emptyForm);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
 
   const { data: memories, isLoading, refetch } = trpc.memories.list.useQuery();
   const createMutation = trpc.memories.create.useMutation();
+  const updateMutation = trpc.memories.update.useMutation();
   const deleteMutation = trpc.memories.delete.useMutation();
 
-  const handleCreate = async () => {
+  const isEditing = editingId !== null;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const openCreate = () => {
+    setEditingId(null);
+    setFormData(emptyForm);
+    setIsOpen(true);
+  };
+
+  const openEdit = (memory: any) => {
+    setEditingId(memory.id);
+    setFormData({
+      title: String(memory.title ?? ""),
+      category: String(memory.category ?? ""),
+      content: String(memory.content ?? ""),
+      source: String(memory.source ?? ""),
+    });
+    setIsOpen(true);
+  };
+
+  const handleSave = async () => {
     if (!formData.title.trim() || !formData.content.trim()) {
       toast.error("Título e conteúdo são obrigatórios");
       return;
     }
     try {
-      await createMutation.mutateAsync(formData);
+      if (isEditing) {
+        await updateMutation.mutateAsync({ id: editingId!, ...formData });
+      } else {
+        await createMutation.mutateAsync(formData);
+      }
       setFormData(emptyForm);
+      setEditingId(null);
       setIsOpen(false);
       await refetch();
-      toast.success("Memória adicionada com sucesso!");
+      toast.success(isEditing ? "Memória atualizada!" : "Memória adicionada com sucesso!");
     } catch (error: any) {
-      toast.error(error?.message || "Erro ao adicionar memória");
+      toast.error(error?.message || "Erro ao salvar memória");
     }
   };
 
@@ -65,20 +92,24 @@ export default function Memories() {
     }
   };
 
+  const newButton = (
+    <Button className="gap-2 min-h-11" onClick={openCreate}>
+      <Plus className="w-4 h-4" />
+      {memories && memories.length > 0 ? "Nova Memória" : "Adicionar Primeira Memória"}
+    </Button>
+  );
+
   const dialog = (
     <Dialog open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
-      if (!open) setFormData(emptyForm);
+      if (!open) {
+        setFormData(emptyForm);
+        setEditingId(null);
+      }
     }}>
-      <DialogTrigger asChild>
-        <Button className="gap-2 min-h-11">
-          <Plus className="w-4 h-4" />
-          {memories && memories.length > 0 ? "Nova Memória" : "Adicionar Primeira Memória"}
-        </Button>
-      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Adicionar Nova Memória</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Memória" : "Adicionar Nova Memória"}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -129,8 +160,8 @@ export default function Memories() {
             <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto min-h-11">
               Cancelar
             </Button>
-            <Button onClick={handleCreate} disabled={createMutation.isPending} className="w-full sm:w-auto min-h-11">
-              {createMutation.isPending ? "Salvando..." : "Salvar Memória"}
+            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto min-h-11">
+              {isSaving ? "Salvando..." : isEditing ? "Salvar Alterações" : "Salvar Memória"}
             </Button>
           </div>
         </div>
@@ -150,7 +181,7 @@ export default function Memories() {
             <p className="text-sm text-muted-foreground break-words">Importe conversas para personalizar sua IA</p>
           </div>
         </div>
-        {memories && memories.length > 0 && dialog}
+        {memories && memories.length > 0 && newButton}
       </div>
 
       <div className="grid gap-4">
@@ -190,16 +221,27 @@ export default function Memories() {
                       Criada em {new Date(memory.createdAt).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDeleteConfirm({ id: memory.id, title: memory.title })}
-                    disabled={deleteMutation.isPending}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-11 w-11 self-end sm:self-start"
-                    aria-label="Remover memória"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex gap-1 self-end sm:self-start">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => openEdit(memory)}
+                      className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-11 w-11"
+                      aria-label="Editar memória"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteConfirm({ id: memory.id, title: memory.title })}
+                      disabled={deleteMutation.isPending}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-11 w-11"
+                      aria-label="Remover memória"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </Card>
             );
@@ -211,10 +253,12 @@ export default function Memories() {
             <p className="text-sm text-muted-foreground mb-6 break-words">
               Importe conversas de outros AIs (ChatGPT, Claude, Gemini) para personalizar sua IA
             </p>
-            {dialog}
+            {newButton}
           </Card>
         )}
       </div>
+
+      {dialog}
 
       <AlertDialog open={deleteConfirm !== null} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <AlertDialogContent>
