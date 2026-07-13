@@ -171,16 +171,23 @@ export const appRouter = router({
   chat: router({
     message: protectedProcedure
       .input(z.object({
-        conversationId: z.number(),
-        message: z.string(),
-        fileUrls: z.array(z.object({
-          url: z.string(),
-          type: z.enum(["image", "document", "audio"]),
-        })).optional(),
+        conversationId: z.number().int().positive(),
+        message: z.string().max(10000, "Mensagem muito longa (limite 10.000 caracteres)"),
+        fileUrls: z
+          .array(
+            z.object({
+              // URL pode ser absoluta (https://...) ou relativa
+              // (/manus-storage/...) — não usa .url() estrito.
+              url: z.string().min(1).max(2000),
+              type: z.enum(["image", "document", "audio"]),
+            })
+          )
+          .max(10, "Máximo 10 arquivos por mensagem")
+          .optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const conv = await db.getConversationById(input.conversationId, ctx.user.id);
-        if (!conv) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!conv) throw new TRPCError({ code: "NOT_FOUND", message: "Conversa não encontrada" });
 
         const prefs = await db.getUserPreferences(ctx.user.id);
         const memories = await db.getUserMemoriesByUserId(ctx.user.id);
