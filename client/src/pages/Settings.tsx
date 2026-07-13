@@ -224,7 +224,9 @@ export default function Settings() {
                     className="bg-input border-input text-foreground"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Você receberá lembretes de tarefas por WhatsApp
+                    Usado no botão "Lembrete no WhatsApp" das tarefas: ele abre o
+                    WhatsApp com a mensagem pronta pra você enviar. O app não envia
+                    sozinho — você confirma o envio.
                   </p>
                 </div>
               </div>
