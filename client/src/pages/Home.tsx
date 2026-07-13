@@ -86,7 +86,7 @@ export default function Home() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Feature 1 */}
             <FeatureCard icon={BookOpen} title="Gerenciamento de Tarefas" description="Crie, organize e priorize suas tarefas, trabalhos e provas com facilidade." tint="primary" />
-            <FeatureCard icon={MessageSquare} title="Chat com IA" description="Converse com um assistente inteligente que explica conceitos e resolve problemas." tint="accent" />
+            <FeatureCard icon={MessageSquare} title="Jarvis — IA que faz por você" description="Peça em linguagem normal e o Jarvis cria tarefas, gera flashcards, quizzes e cronograma — não só responde." tint="accent" />
             <FeatureCard icon={Zap} title="Ferramentas de Estudo" description="Gere flashcards, quizzes e guias de estudo automaticamente com IA." tint="accent" />
             <FeatureCard icon={Calendar} title="Cronograma Personalizado" description="Receba cronogramas de estudo inteligentes baseados em suas tarefas." tint="primary" />
             <FeatureCard icon={FileText} title="Upload de Arquivos" description="Envie imagens e documentos para análise e discussão com a IA." tint="primary" />
