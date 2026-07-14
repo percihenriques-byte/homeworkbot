@@ -101,8 +101,63 @@ function resolve(proc: string, input: any, s: MockState, nextId: () => number): 
       return s.studyGuides;
     case "schedule.get":
       return s.schedule;
+    case "schedule.generate": {
+      s.schedule = {
+        id: 1,
+        schedule: [
+          { date: "2026-07-15", subject: "Matemática", tasks: ["Estudar frações"], duration: "1h", done: false },
+          { date: "2026-07-16", subject: "Português", tasks: ["Ler capítulo 3"], duration: "1h30", done: false },
+        ],
+      };
+      return s.schedule;
+    }
+    case "schedule.setDayDone": {
+      if (s.schedule?.schedule?.[input?.index]) s.schedule.schedule[input.index].done = input?.done;
+      return s.schedule;
+    }
+    case "schedule.reorderDay": {
+      const arr = s.schedule?.schedule;
+      if (arr) {
+        const t = input?.direction === "up" ? input.index - 1 : input.index + 1;
+        if (t >= 0 && t < arr.length) [arr[input.index], arr[t]] = [arr[t], arr[input.index]];
+      }
+      return s.schedule;
+    }
     case "reminders.list":
       return [];
+
+    case "studyTools.generateFlashcards": {
+      const cards = [
+        { id: nextId(), userId: 1, question: "Quanto é 2+2?", answer: "4", subject: input?.subject, difficulty: "fácil", timesReviewed: 0 },
+        { id: nextId(), userId: 1, question: "Capital do Brasil?", answer: "Brasília", subject: input?.subject, difficulty: "fácil", timesReviewed: 0 },
+      ];
+      s.flashcards.push(...cards);
+      return { created: cards.length, flashcards: cards };
+    }
+    case "studyTools.generateQuiz": {
+      const q = { id: nextId(), userId: 1, title: `Quiz: ${input?.subject ?? "Geral"}`, subject: input?.subject, questions: [{ question: "2+2?", options: ["3", "4"], correctAnswer: "4" }], totalQuestions: 1 };
+      s.quizzes.push(q);
+      return q;
+    }
+    case "studyTools.generateStudyGuide": {
+      const g = { id: nextId(), userId: 1, title: `Guia: ${input?.subject ?? "Geral"}`, subject: input?.subject, content: "## Guia\nConteúdo de estudo." };
+      s.studyGuides.push(g);
+      return g;
+    }
+    case "flashcards.review":
+      return { success: true };
+    case "flashcards.delete": {
+      s.flashcards = s.flashcards.filter((x) => x.id !== input?.id);
+      return { success: true };
+    }
+    case "quizzes.delete": {
+      s.quizzes = s.quizzes.filter((x) => x.id !== input?.id);
+      return { success: true };
+    }
+    case "studyGuides.delete": {
+      s.studyGuides = s.studyGuides.filter((x) => x.id !== input?.id);
+      return { success: true };
+    }
 
     case "integrationSettings.update": {
       s.integrationSettings = { ...(s.integrationSettings ?? {}), ...input };
