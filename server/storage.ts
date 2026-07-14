@@ -1,8 +1,28 @@
 // Preconfigured storage helpers for Manus WebDev templates
 // Uploads via Forge Server presigned URL to S3 (PUT direct).
 // Downloads return /manus-storage/{key} paths served via 307 redirect.
+//
+// FALLBACK LOCAL: quando o Forge do Manus não está configurado (app rodando
+// fora do Manus), os arquivos vão pro disco local em UPLOAD_DIR e são servidos
+// em /uploads/{key} (registrado no _core/index.ts). Em host grátis o disco é
+// efêmero — uploads podem sumir num redeploy; é um recurso secundário.
 
 import { ENV } from "./_core/env";
+import { promises as fs } from "fs";
+import path from "path";
+
+const forgeConfigured = () => Boolean(ENV.forgeApiUrl && ENV.forgeApiKey);
+
+export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "data", "uploads");
+
+async function localPut(relKey: string, data: Buffer | Uint8Array | string): Promise<{ key: string; url: string }> {
+  const key = appendHashSuffix(normalizeKey(relKey));
+  const full = path.join(UPLOAD_DIR, key);
+  await fs.mkdir(path.dirname(full), { recursive: true });
+  const buf = typeof data === "string" ? Buffer.from(data) : Buffer.from(data as any);
+  await fs.writeFile(full, buf);
+  return { key, url: `/uploads/${key}` };
+}
 
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
@@ -33,6 +53,9 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
+  // Fora do Manus: grava no disco local.
+  if (!forgeConfigured()) return localPut(relKey, data);
+
   const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
 
@@ -73,6 +96,7 @@ export async function storagePut(
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
+  if (!forgeConfigured()) return { key, url: `/uploads/${key}` };
   return { key, url: `/manus-storage/${key}` };
 }
 
