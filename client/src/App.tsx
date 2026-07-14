@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import DashboardLayout from "./components/DashboardLayout";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Chat from "./pages/Chat";
@@ -61,6 +62,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/painel" /> : <Login />}
+      </Route>
       {PROTECTED_ROUTES.map(({ path, component: Component }) => (
         <Route key={path} path={path}>
           {isAuthenticated ? <Component /> : <Redirect to="/" />}

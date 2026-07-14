@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerReminderRoutes } from "../reminders";
 import { registerToddleSyncRoute } from "../toddleSync";
+import { registerSimpleAuthRoutes } from "../simpleAuth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -38,6 +39,8 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+  // Login simples por senha (fallback quando roda fora do Manus).
+  registerSimpleAuthRoutes(app);
   // Rota de callback do cron de lembretes (/api/scheduled/send-reminders).
   // Precisa vir antes do fallthrough do Vite/estático (não é auto-registrada).
   registerReminderRoutes(app);
