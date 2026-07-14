@@ -23,17 +23,28 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      // Força charset utf8mb4 na conexão. Sem isso, os valores de enum
-      // acentuados no schema ("fácil", "médio", "difícil", "concluída")
-      // corrompem em trânsito quando a DATABASE_URL não declara charset.
-      // O mysql2 faz merge: parseia a `uri` e a opção `charset` explícita
-      // (definida aqui) tem prioridade sobre o que vier na URL.
-      _db = drizzle({
-        connection: {
-          uri: process.env.DATABASE_URL,
-          charset: "utf8mb4",
-        },
-      });
+      // SSL: bancos gerenciados (TiDB Cloud, PlanetScale, Aiven...) exigem TLS.
+      // O mysql2 não liga SSL só pelo "?sslaccept=strict" da URL, então
+      // detectamos e ativamos. Liga se DB_SSL=true, se a URL pedir ssl, ou se
+      // o host for de um provedor gerenciado conhecido.
+      const url = process.env.DATABASE_URL;
+      const wantsSsl =
+        process.env.DB_SSL === "true" ||
+        /sslaccept|ssl-mode|ssl=true/i.test(url) ||
+        /tidbcloud\.com|psdb\.cloud|planetscale|aivencloud\.com|render\.com/i.test(url);
+
+      const connection: Record<string, unknown> = {
+        uri: url,
+        charset: "utf8mb4",
+      };
+      if (wantsSsl) {
+        // rejectUnauthorized: true usa as CAs do sistema (TiDB/PlanetScale
+        // usam certificados públicos). minVersion garante TLS moderno.
+        connection.ssl = { minVersion: "TLSv1.2", rejectUnauthorized: true };
+      }
+
+      // Força charset utf8mb4 (enum acentuado não corrompe).
+      _db = drizzle({ connection });
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
