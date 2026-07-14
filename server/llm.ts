@@ -33,6 +33,49 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY ?? "";
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Converte um JSON Schema (nosso formato OpenAI) pro Schema do Gemini, que
+// exige os tipos em MAIÚSCULO (STRING/OBJECT/...). Exportado pra testes.
+export function toGeminiSchema(schema: any): any {
+  if (!schema || typeof schema !== "object") return undefined;
+  const typeMap: Record<string, string> = {
+    string: "STRING",
+    number: "NUMBER",
+    integer: "INTEGER",
+    boolean: "BOOLEAN",
+    array: "ARRAY",
+    object: "OBJECT",
+  };
+  const out: any = {};
+  if (schema.type) out.type = typeMap[String(schema.type).toLowerCase()] ?? "STRING";
+  if (schema.description) out.description = schema.description;
+  if (Array.isArray(schema.enum)) out.enum = schema.enum;
+  if (schema.properties && typeof schema.properties === "object") {
+    out.properties = {};
+    for (const [k, v] of Object.entries(schema.properties)) out.properties[k] = toGeminiSchema(v);
+    if (Array.isArray(schema.required) && schema.required.length) out.required = schema.required;
+  }
+  if (schema.items) out.items = toGeminiSchema(schema.items);
+  return out;
+}
+
+// Converte tools estilo OpenAI ({type:"function", function:{name,description,parameters}})
+// pro formato do Gemini ({functionDeclarations:[...]}). Exportado pra testes.
+export function toGeminiTools(tools: any[]): any[] {
+  const decls = tools
+    .filter((t) => t?.type === "function" && t.function?.name)
+    .map((t) => {
+      const d: any = { name: t.function.name };
+      if (t.function.description) d.description = t.function.description;
+      const params = toGeminiSchema(t.function.parameters);
+      // Gemini rejeita OBJECT sem properties; omite parameters nesse caso.
+      if (params && params.type === "OBJECT" && params.properties && Object.keys(params.properties).length) {
+        d.parameters = params;
+      }
+      return d;
+    });
+  return decls.length ? [{ functionDeclarations: decls }] : [];
+}
+
 function extractText(content: any): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
@@ -76,6 +119,19 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
   };
   if (systemInstruction) body.systemInstruction = systemInstruction;
 
+  // Function calling: se vierem tools, manda as declarações pro Gemini e liga
+  // o modo (AUTO = o modelo decide; ANY = obriga chamar; NONE = nunca).
+  const tools = (params as any).tools;
+  if (Array.isArray(tools) && tools.length) {
+    const geminiTools = toGeminiTools(tools);
+    if (geminiTools.length) {
+      body.tools = geminiTools;
+      const tc = (params as any).toolChoice ?? (params as any).tool_choice;
+      const mode = tc === "required" ? "ANY" : tc === "none" ? "NONE" : "AUTO";
+      body.toolConfig = { functionCallingConfig: { mode } };
+    }
+  }
+
   const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
   const resp = await fetch(url, {
     method: "POST",
@@ -90,7 +146,27 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
 
   const data: any = await resp.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
-  const outText = parts.map((p: any) => p?.text ?? "").join("");
+
+  // Separa texto de chamadas de função (functionCall) e converte estas pro
+  // formato tool_calls estilo OpenAI, que é o que o chat.message já entende.
+  let outText = "";
+  const toolCalls: any[] = [];
+  for (const p of parts) {
+    if (typeof p?.text === "string") outText += p.text;
+    if (p?.functionCall?.name) {
+      toolCalls.push({
+        id: `call_${toolCalls.length}`,
+        type: "function",
+        function: {
+          name: p.functionCall.name,
+          arguments: JSON.stringify(p.functionCall.args ?? {}),
+        },
+      });
+    }
+  }
+
+  const message: any = { role: "assistant", content: outText };
+  if (toolCalls.length) message.tool_calls = toolCalls;
 
   return {
     id: data?.responseId ?? "gemini",
@@ -99,7 +175,7 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
     choices: [
       {
         index: 0,
-        message: { role: "assistant", content: outText },
+        message,
         finish_reason: data?.candidates?.[0]?.finishReason ?? "stop",
       },
     ],
