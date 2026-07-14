@@ -104,6 +104,40 @@ function resolve(proc: string, input: any, s: MockState, nextId: () => number): 
     case "reminders.list":
       return [];
 
+    case "integrationSettings.update": {
+      s.integrationSettings = { ...(s.integrationSettings ?? {}), ...input };
+      return s.integrationSettings;
+    }
+    case "userPreferences.update":
+      return { ...input };
+    case "email.sendTest":
+      return { success: true };
+
+    case "conversations.create": {
+      const c = { id: nextId(), userId: 1, title: input?.title ?? "Nova Conversa", messages: [], taskId: input?.taskId ?? null, createdAt: new Date().toISOString() };
+      s.conversations.push(c);
+      return c;
+    }
+    case "conversations.rename": {
+      const c = s.conversations.find((x) => x.id === input?.id);
+      if (c) c.title = input?.title;
+      return c ?? null;
+    }
+    case "conversations.delete": {
+      s.conversations = s.conversations.filter((x) => x.id !== input?.id);
+      return { success: true };
+    }
+    case "chat.message": {
+      const c = s.conversations.find((x) => x.id === input?.conversationId);
+      const reply = "Claro! Aqui está a resposta do Jarvis (mock).";
+      if (c) {
+        c.messages = Array.isArray(c.messages) ? c.messages : [];
+        c.messages.push({ role: "user", content: input?.message ?? "" });
+        c.messages.push({ role: "assistant", content: reply });
+      }
+      return { conversationId: input?.conversationId, message: reply, actions: [] };
+    }
+
     case "tasks.create": {
       const t = {
         id: nextId(),
