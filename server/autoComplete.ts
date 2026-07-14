@@ -4,7 +4,7 @@
 // Sem interação: roda no cron, no estilo do próprio usuário.
 
 import * as db from "./db";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLM } from "./llm";
 import { sendCompletedTaskEmail } from "./email";
 
 type TaskRow = {

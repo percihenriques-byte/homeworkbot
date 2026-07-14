@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
+vi.mock("./llm", () => ({ invokeLLM: vi.fn() }));
 vi.mock("./email", () => ({ sendCompletedTaskEmail: vi.fn() }));
 vi.mock("./db", () => ({
   getUserPreferences: vi.fn(),
@@ -12,7 +12,7 @@ vi.mock("./db", () => ({
 
 import { completeAndEmailTask, generateCompletion } from "./autoComplete";
 import * as db from "./db";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLM } from "./llm";
 import { sendCompletedTaskEmail } from "./email";
 
 const task = { id: 3, title: "Redação sobre a Amazônia", subject: "Português" };

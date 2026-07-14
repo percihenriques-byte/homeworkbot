@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mocka as dependências com I/O — testamos só a lógica das ferramentas.
-vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
+vi.mock("./llm", () => ({ invokeLLM: vi.fn() }));
 vi.mock("./reminders", () => ({ syncTaskReminder: vi.fn() }));
 vi.mock("./db", () => ({
   createTask: vi.fn(),

@@ -8,7 +8,7 @@
 //    volta pro modelo (papel "tool") pra ele relatar ao usuário.
 
 import * as db from "./db";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLM } from "./llm";
 import { extractJson } from "./utils/extractJson";
 import { syncTaskReminder } from "./reminders";
 import { normalize } from "@shared/normalize";

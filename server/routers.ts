@@ -4,7 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLM } from "./llm";
 import { storagePut, resolveExternalUrl } from "./storage";
 import { TRPCError } from "@trpc/server";
 import { sendTestEmail, sendCompletedTaskEmail } from "./email";
