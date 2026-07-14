@@ -29,8 +29,9 @@ export type {
   ToolCall,
 } from "./_core/llm";
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY ?? "";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+// Lidos na hora da chamada (não no carregamento) — assim o env pode mudar e dá pra testar.
+const geminiKey = () => process.env.GEMINI_API_KEY ?? "";
+const geminiModel = () => process.env.GEMINI_MODEL || "gemini-2.0-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Converte um JSON Schema (nosso formato OpenAI) pro Schema do Gemini, que
@@ -132,7 +133,7 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
     }
   }
 
-  const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+  const url = `${GEMINI_BASE}/${geminiModel()}:generateContent?key=${geminiKey()}`;
   const resp = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -171,7 +172,7 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
   return {
     id: data?.responseId ?? "gemini",
     created: 0,
-    model: GEMINI_MODEL,
+    model: geminiModel(),
     choices: [
       {
         index: 0,
@@ -184,7 +185,7 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
 
 // Drop-in do invokeLLM. Prioriza Gemini (grátis); sem chave, tenta o Forge.
 export async function invokeLLM(params: forge.InvokeParams): Promise<forge.InvokeResult> {
-  if (GEMINI_KEY) {
+  if (geminiKey()) {
     return invokeGemini(params);
   }
   // Compat: se ainda houver Forge configurado (conta Manus viva), usa ele.
