@@ -134,6 +134,11 @@ function resolve(proc: string, input: any, s: MockState, nextId: () => number): 
       s.memories.push(m);
       return m;
     }
+    case "memories.update": {
+      const m = s.memories.find((x) => x.id === input?.id);
+      if (m) Object.assign(m, input);
+      return m ?? null;
+    }
     case "memories.delete": {
       s.memories = s.memories.filter((x) => x.id !== input?.id);
       return { success: true };
