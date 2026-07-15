@@ -931,6 +931,18 @@ export const appRouter = router({
     importIcs: protectedProcedure
       .input(z.object({ content: z.string().min(1).max(2_000_000, "Arquivo muito grande") }))
       .mutation(async ({ ctx, input }) => {
+        // Sanity: .ics de verdade começa com BEGIN:VCALENDAR. Se veio HTML
+        // (usuário arrastou a página do calendário em vez do arquivo
+        // exportado), mensagem específica é mais útil que "0 eventos".
+        const head = input.content.slice(0, 500).trimStart();
+        if (!/BEGIN:VCALENDAR/i.test(head)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: /^<!doctype|^<html/i.test(head)
+              ? "O arquivo parece uma página web (HTML), não um .ics. Exporte o calendário e envie o arquivo baixado."
+              : "O arquivo não parece um .ics válido. Exporte o calendário do Toddle/Google/Outlook (extensão .ics).",
+          });
+        }
         const events = parseIcs(input.content);
         if (events.length === 0) {
           throw new TRPCError({
