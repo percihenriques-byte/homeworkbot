@@ -14,6 +14,7 @@ import { syncTaskReminder } from "./reminders";
 import { normalize } from "@shared/normalize";
 import { parseUserDate } from "./utils/parseUserDate";
 import { llmText } from "./utils/llmText";
+import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -183,9 +184,7 @@ export async function executeAgentTool(
           ],
         });
         const parsed = extractJson<any[]>(response.choices[0]?.message?.content);
-        const valid = (Array.isArray(parsed) ? parsed : []).filter(
-          (c) => typeof c?.question === "string" && c.question.trim() && typeof c?.answer === "string" && c.answer.trim()
-        );
+        const valid = validateFlashcards(parsed);
         if (valid.length === 0) return { ok: false, summary: "A IA não conseguiu gerar flashcards dessa vez." };
         for (const card of valid) {
           await db.createFlashcard({
@@ -216,15 +215,7 @@ export async function executeAgentTool(
           ],
         });
         const parsed = extractJson<{ questions?: any[] }>(response.choices[0]?.message?.content);
-        const valid = (Array.isArray(parsed?.questions) ? parsed!.questions : []).filter(
-          (q) =>
-            typeof q?.question === "string" &&
-            q.question.trim() &&
-            Array.isArray(q?.options) &&
-            q.options.length >= 2 &&
-            typeof q?.correctAnswer === "string" &&
-            q.correctAnswer.trim()
-        );
+        const valid = validateQuizQuestions(parsed?.questions);
         if (valid.length === 0) return { ok: false, summary: "A IA não conseguiu gerar o quiz dessa vez." };
         await db.createQuiz({
           userId,

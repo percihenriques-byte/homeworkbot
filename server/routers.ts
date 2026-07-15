@@ -17,6 +17,7 @@ import { friendlyEmailError } from "./utils/friendlyEmailError";
 import { generateCompletion } from "./autoComplete";
 import { buildChatSystemPrompt } from "./chatPrompt";
 import { llmText } from "./utils/llmText";
+import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
 
 export const appRouter = router({
   system: systemRouter,
@@ -524,14 +525,10 @@ export const appRouter = router({
         });
 
         const parsed = extractJson<any[]>(response.choices[0]?.message?.content);
-        const flashcards = Array.isArray(parsed) ? parsed : [];
-
         // Filtra: só aceita cards com question E answer não vazios.
         // Impede que LLM retornando {question: null} ou {answer: ""}
-        // suje o banco com flashcards inúteis.
-        const validCards = flashcards.filter(
-          (c) => typeof c?.question === "string" && c.question.trim() && typeof c?.answer === "string" && c.answer.trim()
-        );
+        // suje o banco com flashcards inúteis. Lógica em @utils/validateAiOutput.
+        const validCards = validateFlashcards(parsed);
 
         if (validCards.length === 0) {
           throw new TRPCError({
@@ -580,20 +577,10 @@ export const appRouter = router({
         });
 
         const parsed = extractJson<{ questions?: any[] }>(response.choices[0]?.message?.content);
-        const rawQuestions = Array.isArray(parsed?.questions) ? parsed.questions : [];
-
         // Filtra: cada questão precisa de question (string), options (array
-        // com pelo menos 2) e correctAnswer (string). Sem isso o QuizGame
-        // não consegue funcionar.
-        const validQuestions = rawQuestions.filter(
-          (q) =>
-            typeof q?.question === "string" &&
-            q.question.trim() &&
-            Array.isArray(q?.options) &&
-            q.options.length >= 2 &&
-            typeof q?.correctAnswer === "string" &&
-            q.correctAnswer.trim()
-        );
+        // com pelo menos 2) e correctAnswer (string). Lógica em
+        // @utils/validateAiOutput pra ficar consistente com agentTools.
+        const validQuestions = validateQuizQuestions(parsed?.questions);
 
         if (validQuestions.length === 0) {
           throw new TRPCError({
