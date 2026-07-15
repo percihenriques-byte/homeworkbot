@@ -21,6 +21,7 @@ import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOut
 import { extractMarkdownTitle } from "@shared/markdownTitle";
 import { taskDedupKey } from "./utils/taskDedupKey";
 import { isPendingTask } from "@shared/isPendingTask";
+import { classifyPhoneBR } from "@shared/phoneBR";
 
 export const appRouter = router({
   system: systemRouter,
@@ -960,11 +961,10 @@ export const appRouter = router({
     // Substitua pelo provider Twilio/similar quando a integração chegar.
     sendTest: protectedProcedure.mutation(async ({ ctx }) => {
       const settings = await db.getIntegrationSettings(ctx.user.id);
-      const phone = settings?.whatsappPhoneNumber?.trim();
-      // Precisa de pelo menos 8 digitos (mais curto que qualquer numero
-      // real internacional). Aceita "+", espacos e dashes na entrada.
-      const digits = phone?.replace(/\D/g, "") ?? "";
-      if (!phone || digits.length < 8) {
+      // Validação delegada pra @shared/phoneBR — mesma regra usada no
+      // Settings (feedback inline) e no botão wa.me (whatsappUrl).
+      const classified = classifyPhoneBR(settings?.whatsappPhoneNumber);
+      if (!classified.ok) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
           message: "Configure um número de WhatsApp válido em Configurações antes de testar.",
