@@ -26,6 +26,7 @@ import { buildWhatsappReminderUrl } from "@shared/whatsappUrl";
 import { sortTasks } from "@shared/sortTasks";
 import { isDueSoon, isOverdue } from "@shared/taskUrgency";
 import { filterTasks } from "@shared/filterTasks";
+import { taskToCreateInput } from "@shared/taskCreateInput";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -230,16 +231,7 @@ export default function Tasks() {
               label: "Desfazer",
               onClick: async () => {
                 try {
-                  await createTaskMutation.mutateAsync({
-                    title: String(removed.title ?? ""),
-                    description: removed.description || undefined,
-                    dueDate: removed.dueDate ? new Date(removed.dueDate) : undefined,
-                    difficulty: removed.difficulty as any,
-                    priority: removed.priority as any,
-                    type: removed.type as any,
-                    subject: removed.subject || undefined,
-                    notes: removed.notes || undefined,
-                  });
+                  await createTaskMutation.mutateAsync(taskToCreateInput(removed) as any);
                   await refetch();
                   toast.success("Tarefa restaurada");
                 } catch (err: any) {
@@ -256,16 +248,9 @@ export default function Tasks() {
 
   const handleDuplicateTask = async (task: any) => {
     try {
-      await createTaskMutation.mutateAsync({
-        title: `${task.title} (cópia)`,
-        description: task.description || undefined,
-        dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-        difficulty: task.difficulty as any,
-        priority: task.priority as any,
-        type: task.type as any,
-        subject: task.subject || undefined,
-        notes: task.notes || undefined,
-      });
+      await createTaskMutation.mutateAsync(
+        taskToCreateInput(task, `${task.title} (cópia)`) as any
+      );
       await refetch();
       toast.success("Tarefa duplicada");
     } catch (error: any) {
