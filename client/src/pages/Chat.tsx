@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import { inferAttachmentType } from "@shared/attachmentType";
 
 type Attachment = { name: string; url: string; type: "image" | "document" | "audio"; mimeType?: string };
 
@@ -128,12 +129,6 @@ export default function Chat() {
       setMessageInput(outgoing);
       setPendingAttachments(outgoingAttachments);
     }
-  };
-
-  const inferAttachmentType = (mime: string): Attachment["type"] => {
-    if (mime.startsWith("image/")) return "image";
-    if (mime.startsWith("audio/")) return "audio";
-    return "document";
   };
 
   // Converte Uint8Array em base64 sem estourar o limite de argumentos
