@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { formatDate } from "@shared/formatDate";
 import { Plus, Trash2, Brain, Pencil } from "lucide-react";
 
 type MemoryFormData = {
@@ -241,7 +242,7 @@ export default function Memories() {
                     )}
                     <p className="text-sm text-foreground/80 line-clamp-2 break-words">{preview}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      Criada em {new Date(memory.createdAt).toLocaleDateString("pt-BR")}
+                      Criada em {formatDate(memory.createdAt)}
                     </p>
                   </div>
                   <div className="flex gap-1 self-end sm:self-start">

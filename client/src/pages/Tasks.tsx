@@ -27,6 +27,7 @@ import { sortTasks } from "@shared/sortTasks";
 import { isDueSoon, isOverdue } from "@shared/taskUrgency";
 import { filterTasks } from "@shared/filterTasks";
 import { taskToCreateInput } from "@shared/taskCreateInput";
+import { formatDate } from "@shared/formatDate";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -731,7 +732,7 @@ export default function Tasks() {
                             className={`flex items-center gap-1 ${overdue ? "text-red-500 font-medium" : dueSoon ? "text-amber-500 font-medium" : ""}`}
                           >
                             <Clock className="w-4 h-4" />
-                            {new Date(task.dueDate).toLocaleDateString("pt-BR")}
+                            {formatDate(task.dueDate, { relative: true })}
                             {overdue && (
                               <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-red-500/10">
                                 Atrasada
