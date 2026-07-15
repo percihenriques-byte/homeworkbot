@@ -1,35 +1,7 @@
 import nodemailer from "nodemailer";
+import { escapeHtml, formatFrom } from "./utils/emailFormatting";
 
 const DEFAULT_FROM = "noreply@homeworkassistant.com";
-
-/**
- * Escapa string para HTML (previne injeção quando conteúdo do usuário
- * — títulos, respostas geradas, etc — é interpolado nos templates abaixo).
- */
-function escapeHtml(input: string): string {
-  return String(input)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-/**
- * Formata um endereço "from" com nome amigável quando presente.
- * Nome é sanitizado para remover aspas duplas (que quebrariam o header).
- */
-function formatFrom(email: string, name?: string | null): string {
-  if (!name || !name.trim()) return email;
-  // Remove caracteres que quebram o header RFC 5322: aspas duplas,
-  // colchetes angulares, controles, quebras de linha.
-  const safeName = name
-    .replace(/["<>\r\n]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!safeName) return email;
-  return `"${safeName}" <${email}>`;
-}
 
 async function createGmailTransporter(gmailUser: string, gmailAppPassword: string) {
   if (!gmailUser || !gmailAppPassword) {
