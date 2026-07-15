@@ -17,6 +17,7 @@ import { llmText } from "./utils/llmText";
 import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
 import { extractMarkdownTitle } from "@shared/markdownTitle";
 import { isPendingTask } from "@shared/isPendingTask";
+import { formatDate } from "@shared/formatDate";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -162,7 +163,7 @@ export async function executeAgentTool(
           summary:
             `Tarefa criada: "${String(args.title).trim()}"` +
             (args.subject ? ` (${args.subject})` : "") +
-            (due ? `, prazo ${due.toLocaleDateString("pt-BR")}` : "") +
+            (due ? `, prazo ${formatDate(due)}` : "") +
             ".",
           data: created,
         };
@@ -318,7 +319,7 @@ export async function executeAgentTool(
         const pending = tasks.filter(isPendingTask);
         const lines = pending
           .slice(0, 30)
-          .map((t) => `- ${t.title}${t.subject ? ` (${t.subject})` : ""}${t.dueDate ? `, prazo ${new Date(t.dueDate).toLocaleDateString("pt-BR")}` : ""}`)
+          .map((t) => `- ${t.title}${t.subject ? ` (${t.subject})` : ""}${t.dueDate ? `, prazo ${formatDate(t.dueDate)}` : ""}`)
           .join("\n");
         return {
           ok: true,

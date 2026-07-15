@@ -10,6 +10,7 @@
 // Puro (sem I/O) — testável isoladamente.
 
 import { classifyPhoneBR } from "./phoneBR";
+import { formatDate } from "./formatDate";
 
 export type WhatsappReminderInput = {
   phone?: string | null;
@@ -30,9 +31,7 @@ export type WhatsappReminderInput = {
 export function buildWhatsappReminderUrl(input: WhatsappReminderInput): string {
   const classified = classifyPhoneBR(input.phone);
   const validPhone = classified.ok ? classified.digits : "";
-  const due = input.dueDate
-    ? new Date(input.dueDate).toLocaleDateString("pt-BR")
-    : "sem prazo";
+  const due = input.dueDate ? formatDate(input.dueDate) : "sem prazo";
   const msg =
     `📚 Lembrete de tarefa: ${input.title}` +
     (input.subject ? ` (${input.subject})` : "") +

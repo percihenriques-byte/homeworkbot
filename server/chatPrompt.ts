@@ -2,6 +2,8 @@
 // server/routers.ts pra ficar testável — a função é pura (data-in →
 // string-out), então dá pra fixar `now` e verificar seções condicionais.
 
+import { formatDate } from "@shared/formatDate";
+
 export type ChatPromptTask = {
   title: string;
   subject?: string | null;
@@ -77,7 +79,7 @@ export function buildChatSystemPrompt(opts: ChatPromptOpts = {}): string {
     if (task.subject) prompt += `- Disciplina: ${task.subject}\n`;
     if (task.type) prompt += `- Tipo: ${task.type}\n`;
     if (task.dueDate) {
-      prompt += `- Prazo: ${new Date(task.dueDate).toLocaleDateString("pt-BR")}\n`;
+      prompt += `- Prazo: ${formatDate(task.dueDate)}\n`;
     }
     if (task.description) prompt += `- Descrição: ${task.description}\n`;
     if (task.notes) prompt += `- Anotações do usuário: ${task.notes}\n`;

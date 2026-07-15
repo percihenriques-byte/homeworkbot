@@ -7,6 +7,7 @@ import type { Express, Request, Response } from "express";
 import { sdk } from "./_core/sdk";
 import * as db from "./db";
 import { sendReminderEmail } from "./email";
+import { formatDate } from "@shared/formatDate";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -79,9 +80,7 @@ export async function sendDueReminders(): Promise<DispatchResult> {
         continue;
       }
 
-      const dueStr = task.dueDate
-        ? new Date(task.dueDate).toLocaleDateString("pt-BR")
-        : "sem prazo definido";
+      const dueStr = task.dueDate ? formatDate(task.dueDate) : "sem prazo definido";
 
       await sendReminderEmail(
         toEmail,
