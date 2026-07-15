@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { normalize } from "@shared/normalize";
+import { computeStreak } from "@shared/computeStreak";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -56,38 +57,18 @@ export default function Dashboard() {
     return { total: all.length, done, pending, overdue, dueSoon, pct };
   }, [tasks]);
 
-  // Streak: dias consecutivos até hoje com qualquer atividade (task criada/
-  // concluida, mensagem no chat, memoria adicionada, flashcard revisado).
-  // Local-only: usa dados ja carregados no dashboard, sem query extra.
+  // Streak: dias consecutivos até hoje com qualquer atividade.
+  // Local-only: usa dados já carregados no dashboard, sem query extra.
+  // Lógica delegada pro util testável em @shared/computeStreak.
   const streak = useMemo(() => {
-    const dates = new Set<string>();
-    const add = (d: Date | string | null | undefined) => {
-      if (!d) return;
-      const iso = new Date(d).toISOString().slice(0, 10);
-      dates.add(iso);
-    };
+    const all: Array<Date | string | null | undefined> = [];
     for (const t of tasks ?? []) {
-      add(t.createdAt);
-      add(t.completedAt);
+      all.push(t.createdAt, t.completedAt);
     }
-    for (const c of conversations ?? []) add(c.updatedAt);
-    for (const m of memories ?? []) add(m.createdAt);
-    for (const f of flashcards ?? []) add((f as any).lastReviewedAt);
-
-    // Conta dias consecutivos indo pra tras a partir de hoje.
-    let count = 0;
-    const cursor = new Date();
-    // Zera horas no fuso local pra bater com o formato ISO date.
-    cursor.setHours(0, 0, 0, 0);
-    for (let i = 0; i < 365; i++) {
-      const iso = new Date(cursor.getTime() - cursor.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 10);
-      if (!dates.has(iso)) break;
-      count++;
-      cursor.setDate(cursor.getDate() - 1);
-    }
-    return count;
+    for (const c of conversations ?? []) all.push(c.updatedAt);
+    for (const m of memories ?? []) all.push(m.createdAt);
+    for (const f of flashcards ?? []) all.push((f as any).lastReviewedAt);
+    return computeStreak(all);
   }, [tasks, conversations, memories, flashcards]);
 
   const upcoming = useMemo(() => {
