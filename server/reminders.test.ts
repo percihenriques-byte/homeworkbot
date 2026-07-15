@@ -47,6 +47,13 @@ describe("syncTaskReminder", () => {
     expect(db.createEmailReminder).not.toHaveBeenCalled();
   });
 
+  it("tarefa 'concluida' (sem acento) também não agenda (regression)", async () => {
+    // Antes do accent-insensitive fix, uma tarefa com status 'concluida'
+    // (sem acento) escapava do check e o lembrete era criado.
+    await syncTaskReminder(7, { id: 3, dueDate: new Date(2099, 0, 1), status: "concluida" });
+    expect(db.createEmailReminder).not.toHaveBeenCalled();
+  });
+
   it("prazo em menos de 24h → agenda pra 'agora' (não no passado)", async () => {
     const due = new Date(Date.now() + 2 * 60 * 60 * 1000); // +2h
     await syncTaskReminder(7, { id: 3, dueDate: due, status: "pendente" });
