@@ -16,6 +16,7 @@ import { syncToddleForUser } from "./toddleSync";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
 import { generateCompletion } from "./autoComplete";
 import { buildChatSystemPrompt } from "./chatPrompt";
+import { llmText } from "./utils/llmText";
 
 export const appRouter = router({
   system: systemRouter,
@@ -279,12 +280,7 @@ export const appRouter = router({
           ...mappedMessages,
         ];
 
-        const textOf = (raw: any): string =>
-          typeof raw === "string"
-            ? raw
-            : Array.isArray(raw)
-              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
-              : "";
+        const textOf = llmText;
 
         // Primeira chamada COM ferramentas: o modelo decide se age (criar
         // tarefa, gerar material...) ou só responde. toolChoice "auto".
@@ -640,13 +636,7 @@ export const appRouter = router({
           ],
         });
 
-        const raw = response.choices[0]?.message?.content;
-        const guideStr =
-          typeof raw === "string"
-            ? raw
-            : Array.isArray(raw)
-              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
-              : "";
+        const guideStr = llmText(response.choices[0]?.message?.content);
 
         if (!guideStr.trim()) {
           throw new TRPCError({

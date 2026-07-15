@@ -6,6 +6,7 @@
 import * as db from "./db";
 import { invokeLLM } from "./llm";
 import { sendCompletedTaskEmail } from "./email";
+import { llmText } from "./utils/llmText";
 
 type TaskRow = {
   id: number;
@@ -57,12 +58,7 @@ export async function generateCompletion(userId: number, task: TaskRow): Promise
     ],
   });
 
-  const raw = response.choices[0]?.message?.content;
-  return typeof raw === "string"
-    ? raw
-    : Array.isArray(raw)
-      ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
-      : "";
+  return llmText(response.choices[0]?.message?.content);
 }
 
 export type AutoCompleteResult = { completed: boolean; emailed: boolean };

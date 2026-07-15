@@ -13,6 +13,7 @@ import { extractJson } from "./utils/extractJson";
 import { syncTaskReminder } from "./reminders";
 import { normalize } from "@shared/normalize";
 import { parseUserDate } from "./utils/parseUserDate";
+import { llmText } from "./utils/llmText";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -251,13 +252,7 @@ export async function executeAgentTool(
             { role: "user", content: `Crie um guia de estudo sobre: ${topico}` },
           ],
         });
-        const raw = response.choices[0]?.message?.content;
-        const guide =
-          typeof raw === "string"
-            ? raw
-            : Array.isArray(raw)
-              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
-              : "";
+        const guide = llmText(response.choices[0]?.message?.content);
         if (!guide.trim()) return { ok: false, summary: "A IA não conseguiu gerar o guia dessa vez." };
         await db.createStudyGuide({
           userId,
