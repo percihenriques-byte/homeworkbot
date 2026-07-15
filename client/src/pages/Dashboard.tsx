@@ -21,10 +21,10 @@ import {
   Flame,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { normalize } from "@shared/normalize";
 import { computeStreak } from "@shared/computeStreak";
 import { computeTaskStats } from "@shared/taskStats";
 import { computeStudyStats } from "@shared/studyStats";
+import { getUpcomingTasks } from "@shared/upcomingTasks";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -54,23 +54,7 @@ export default function Dashboard() {
     return computeStreak(all);
   }, [tasks, conversations, memories, flashcards]);
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
-    return (tasks ?? [])
-      .filter(
-        (t) =>
-          normalize(t.status) !== "concluida" &&
-          t.dueDate &&
-          new Date(t.dueDate).getTime() >= now &&
-          new Date(t.dueDate).getTime() < now + 7 * dayMs
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()
-      )
-      .slice(0, 5);
-  }, [tasks]);
+  const upcoming = useMemo(() => getUpcomingTasks(tasks ?? []), [tasks]);
 
   const studyStats = useMemo(
     () =>
