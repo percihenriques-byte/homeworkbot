@@ -11,6 +11,7 @@ import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send, Eye, Eye
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
 import { classifyFeedUrl } from "@shared/toddleFeedUrl";
+import { classifyPhoneBR } from "@shared/phoneBR";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("integracao");
@@ -286,7 +287,28 @@ export default function Settings() {
                     }
                     placeholder="+55 11 99999-9999"
                     className="bg-input border-input text-foreground"
+                    aria-invalid={
+                      integrationData.whatsappPhoneNumber.trim().length > 0 &&
+                      !classifyPhoneBR(integrationData.whatsappPhoneNumber).ok
+                    }
                   />
+                  {(() => {
+                    const raw = integrationData.whatsappPhoneNumber;
+                    if (!raw.trim()) return null;
+                    const r = classifyPhoneBR(raw);
+                    if (r.ok) {
+                      return (
+                        <p className="text-xs text-green-400">
+                          ✓ Formato ok — {r.pretty}
+                        </p>
+                      );
+                    }
+                    return (
+                      <p className="text-xs text-red-400 break-words" role="alert">
+                        {r.message}
+                      </p>
+                    );
+                  })()}
                   <p className="text-xs text-muted-foreground">
                     Usado no botão "Lembrete no WhatsApp" das tarefas: ele abre o
                     WhatsApp com a mensagem pronta pra você enviar. O app não envia
