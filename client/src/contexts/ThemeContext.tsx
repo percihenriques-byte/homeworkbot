@@ -22,9 +22,15 @@ export function ThemeProvider({
   switchable = false,
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
+    if (!switchable) return defaultTheme;
+    // Try/catch: localStorage pode dar throw em Safari privado / Firefox
+    // com storage bloqueado. Silencioso: cai no default e o toggle
+    // continua funcionando na sessão (só não persiste).
+    try {
       const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+      if (stored === "dark" || stored === "light") return stored;
+    } catch {
+      // acesso a localStorage negado — ignora
     }
     return defaultTheme;
   });
@@ -38,7 +44,11 @@ export function ThemeProvider({
     }
 
     if (switchable) {
-      localStorage.setItem("theme", theme);
+      try {
+        localStorage.setItem("theme", theme);
+      } catch {
+        // storage cheio / bloqueado — não persiste, mas UI já mudou
+      }
     }
   }, [theme, switchable]);
 
