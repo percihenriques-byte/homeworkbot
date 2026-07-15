@@ -12,6 +12,7 @@ import { invokeLLM } from "./llm";
 import { extractJson } from "./utils/extractJson";
 import { syncTaskReminder } from "./reminders";
 import { normalize } from "@shared/normalize";
+import { parseUserDate } from "./utils/parseUserDate";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -126,22 +127,6 @@ export const AGENT_TOOLS = [
   },
 ];
 
-function toDateOrUndefined(value: unknown): Date | undefined {
-  if (typeof value !== "string" || !value.trim()) return undefined;
-  const v = value.trim();
-  // Data pura "AAAA-MM-DD": `new Date("2026-07-18")` seria meia-noite UTC,
-  // que em pt-BR (UTC-3) exibe como o dia ANTERIOR. Fixamos no MEIO-DIA
-  // local pra o prazo cair no dia certo em qualquer fuso do Brasil.
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
-  if (dateOnly) {
-    const [, y, mo, d] = dateOnly;
-    const dt = new Date(Number(y), Number(mo) - 1, Number(d), 12, 0, 0);
-    return Number.isFinite(dt.getTime()) ? dt : undefined;
-  }
-  const d = new Date(v);
-  return Number.isFinite(d.getTime()) ? d : undefined;
-}
-
 // Executa uma ferramenta pedida pelo modelo. Nunca lança: erros viram um
 // ToolResult com ok:false, pra IA conseguir relatar a falha ao usuário.
 export async function executeAgentTool(
@@ -159,7 +144,7 @@ export async function executeAgentTool(
           userId,
           title: String(args.title).slice(0, 255),
           description: args.description ? String(args.description).slice(0, 2000) : undefined,
-          dueDate: toDateOrUndefined(args.dueDate),
+          dueDate: parseUserDate(args.dueDate),
           difficulty: ["fácil", "médio", "difícil"].includes(args.difficulty) ? args.difficulty : undefined,
           priority: ["baixa", "média", "alta"].includes(args.priority) ? args.priority : undefined,
           type: ["tarefa", "trabalho", "prova", "projeto", "leitura"].includes(args.type) ? args.type : undefined,
@@ -167,7 +152,7 @@ export async function executeAgentTool(
           status: "pendente",
         });
         if (created) await syncTaskReminder(userId, created as any);
-        const due = toDateOrUndefined(args.dueDate);
+        const due = parseUserDate(args.dueDate);
         return {
           ok: true,
           summary:
