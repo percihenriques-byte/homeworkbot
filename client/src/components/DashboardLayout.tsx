@@ -50,12 +50,15 @@ export default function DashboardLayout({
   const [sidebarWidth, setSidebarWidth] = useState(() => {
     // localStorage pode dar throw em Safari privado / storage bloqueado.
     // parseInt sem checar NaN pode vazar largura zerada e sumir com o
-    // sidebar em janela quebrada.
+    // sidebar em janela quebrada. E se o valor salvo estiver fora do
+    // range válido (versão antiga do app, edit manual do storage), a
+    // sidebar quebrava o layout. Agora fica clampado em [MIN, MAX].
     try {
       const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
       if (!saved) return DEFAULT_WIDTH;
       const parsed = parseInt(saved, 10);
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_WIDTH;
+      if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_WIDTH;
+      return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, parsed));
     } catch {
       return DEFAULT_WIDTH;
     }
