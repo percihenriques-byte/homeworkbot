@@ -8,6 +8,7 @@ import { sdk } from "./_core/sdk";
 import * as db from "./db";
 import { sendReminderEmail } from "./email";
 import { formatDate } from "@shared/formatDate";
+import { normalize } from "@shared/normalize";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -26,7 +27,7 @@ export async function syncTaskReminder(userId: number, task: TaskLike | undefine
   await db.deleteUnsentRemindersForTask(userId, task.id);
 
   if (!task.dueDate) return;
-  if (task.status === "concluída") return;
+  if (normalize(task.status) === "concluida") return;
   const due = new Date(task.dueDate).getTime();
   if (!Number.isFinite(due)) return;
 
@@ -59,7 +60,7 @@ export async function sendDueReminders(): Promise<DispatchResult> {
       const task = await db.getTaskById(rem.taskId, rem.userId);
       // Tarefa apagada ou já concluída → não faz sentido lembrar. Marca
       // como enviado pra tirar da fila.
-      if (!task || task.status === "concluída") {
+      if (!task || normalize(task.status) === "concluida") {
         await db.updateEmailReminder(rem.id, { sent: true, sentAt: new Date() });
         skipped++;
         continue;
