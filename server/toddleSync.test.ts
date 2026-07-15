@@ -108,4 +108,17 @@ describe("syncToddleForUser", () => {
     mockFetchOk("Some random text response");
     await expect(syncToddleForUser(1)).rejects.toThrow(/calendário válido/i);
   });
+
+  it("redirect pra host interno (SSRF via redirect) → rejeita", async () => {
+    // fetch original bate em cal.exemplo.com (ok), mas resp.url mostra
+    // que o servidor redirecionou pra 127.0.0.1 — o guard novo pega.
+    (db.getIntegrationSettings as any).mockResolvedValue({ toddleApiKey: "https://cal.exemplo.com/f.ics" });
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      url: "http://127.0.0.1/metadata",
+      text: async () => "BEGIN:VCALENDAR\nEND:VCALENDAR",
+    })));
+    await expect(syncToddleForUser(1)).rejects.toThrow(/endereço interno|recusado/i);
+  });
 });

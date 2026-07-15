@@ -54,6 +54,14 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
     } finally {
       clearTimeout(timeout);
     }
+    // SSRF fecha: mesmo se o redirect final for pra host interno (ex:
+    // meta-data cloud, 169.254.169.254), rejeita. redirect:'follow'
+    // sozinho não protegia — só validávamos o URL original.
+    if (resp.url && !isSafeFeedUrl(resp.url)) {
+      throw new Error(
+        "o servidor tentou redirecionar pra um endereço interno — link recusado."
+      );
+    }
     if (!resp.ok) {
       // Mensagens mais amigáveis pros erros HTTP mais comuns.
       let msg: string;
