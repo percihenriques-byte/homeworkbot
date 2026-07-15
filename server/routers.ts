@@ -14,6 +14,7 @@ import { syncTaskReminder } from "./reminders";
 import { AGENT_TOOLS, executeAgentTool } from "./agentTools";
 import { syncToddleForUser } from "./toddleSync";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
+import { generateCompletion } from "./autoComplete";
 
 export const appRouter = router({
   system: systemRouter,
@@ -437,54 +438,10 @@ export const appRouter = router({
         const task = await db.getTaskById(input.taskId, ctx.user.id);
         if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Tarefa não encontrada" });
 
-        const prefs = await db.getUserPreferences(ctx.user.id);
-        const memories = await db.getUserMemoriesByUserId(ctx.user.id);
-
-        let systemPrompt =
-          `Você é o próprio usuário completando uma tarefa escolar. Escreva na primeira pessoa e imite fielmente o estilo, tom e vocabulário do usuário conforme mostrado nas memórias.\n` +
-          `Nunca mencione que é IA, nunca comente sobre a tarefa em terceira pessoa. Apenas produza o texto/resposta final como se fosse o usuário. Responda em Português (BR).`;
-
-        if (prefs?.aiStyle) {
-          systemPrompt += `\n\nEstilo preferido: ${prefs.aiStyle}`;
-        }
-
-        if (memories && memories.length > 0) {
-          systemPrompt += `\n\nAmostras do estilo de escrita do usuário (imite palavra por palavra a forma de escrever):\n`;
-          for (const memory of memories.slice(0, 5)) {
-            systemPrompt += `\n--- ${memory.title}${memory.category ? ` (${memory.category})` : ""} ---\n${memory.content.substring(0, 800)}\n`;
-          }
-        } else {
-          // Sem memórias: instrução mais moderada para o LLM não inventar
-          // um estilo. Melhor produzir texto neutro adolescente/estudante
-          // do que arriscar imitar mal.
-          systemPrompt +=
-            `\n\nO usuário ainda não cadastrou memórias com amostras do próprio estilo. ` +
-            `Escreva em um tom natural de estudante brasileiro, direto e claro, sem gírias exageradas. ` +
-            `Use frases de tamanho médio, evite chavões acadêmicos e termos rebuscados.`;
-        }
-
-        const userInstruction =
-          `Complete a seguinte tarefa escolar imitando meu estilo:\n\n` +
-          `Título: ${task.title}\n` +
-          (task.subject ? `Disciplina: ${task.subject}\n` : "") +
-          (task.type ? `Tipo: ${task.type}\n` : "") +
-          (task.description ? `\nDescrição da tarefa:\n${task.description}\n` : "") +
-          (task.notes ? `\nMinhas anotações:\n${task.notes}\n` : "");
-
-        const response = await invokeLLM({
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userInstruction },
-          ],
-        });
-
-        const raw = response.choices[0]?.message?.content;
-        const result =
-          typeof raw === "string"
-            ? raw
-            : Array.isArray(raw)
-              ? raw.map((p: any) => (typeof p === "string" ? p : p?.text ?? "")).join("")
-              : "";
+        // Delega pra generateCompletion (autoComplete.ts) — mesma lógica
+        // usada pelo pipeline autônomo do Toddle. Elimina duplicação de
+        // ~50 linhas de prompt.
+        const result = await generateCompletion(ctx.user.id, task as any);
 
         if (!result.trim()) {
           throw new TRPCError({
