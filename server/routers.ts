@@ -280,6 +280,42 @@ export const appRouter = router({
             return { role: m.role, content: m.content };
           })
         );
+
+        // Injeta imagens de memórias na PRIMEIRA mensagem user do payload
+        // — assim a IA vê as fotos de referência (letra, formato) sem
+        // pagar tokens em toda rodada. Cap em 3 imagens pra chat (menor
+        // que autoComplete que usa 4, porque chat pode ter várias trocas).
+        const CHAT_MEMORY_IMAGES = 3;
+        const memoryImages: string[] = [];
+        for (const mem of (memories ?? []).slice(0, 5)) {
+          if (Array.isArray((mem as any).imageUrls)) {
+            for (const url of (mem as any).imageUrls as unknown[]) {
+              if (typeof url === "string" && url && memoryImages.length < CHAT_MEMORY_IMAGES) {
+                memoryImages.push(url);
+              }
+            }
+          }
+        }
+        if (memoryImages.length > 0) {
+          const firstUserIdx = mappedMessages.findIndex((m: any) => m.role === "user");
+          if (firstUserIdx >= 0) {
+            const target = mappedMessages[firstUserIdx];
+            const currentText =
+              typeof target.content === "string" ? target.content : "";
+            const currentParts: any[] = Array.isArray(target.content)
+              ? [...(target.content as any[])]
+              : [{ type: "text", text: currentText }];
+            for (const url of memoryImages) {
+              const externalUrl = await resolveExternalUrl(url);
+              currentParts.push({
+                type: "image_url",
+                image_url: { url: externalUrl, detail: "auto" },
+              });
+            }
+            mappedMessages[firstUserIdx] = { role: "user", content: currentParts };
+          }
+        }
+
         const llmMessages = [
           { role: "system" as const, content: systemPrompt },
           ...mappedMessages,
