@@ -23,6 +23,7 @@ import {
 import { useAuth } from "@/_core/hooks/useAuth";
 import { normalize } from "@shared/normalize";
 import { computeStreak } from "@shared/computeStreak";
+import { computeTaskStats } from "@shared/taskStats";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -34,28 +35,9 @@ export default function Dashboard() {
   const { data: conversations } = trpc.conversations.list.useQuery();
   const { data: integrationSettings } = trpc.integrationSettings.get.useQuery();
 
-  const stats = useMemo(() => {
-    const all = tasks ?? [];
-    const now = Date.now();
-    const dayMs = 24 * 60 * 60 * 1000;
-    const done = all.filter((t) => normalize(t.status) === "concluida").length;
-    const overdue = all.filter(
-      (t) =>
-        normalize(t.status) !== "concluida" &&
-        t.dueDate &&
-        new Date(t.dueDate).getTime() < now
-    ).length;
-    const dueSoon = all.filter(
-      (t) =>
-        normalize(t.status) !== "concluida" &&
-        t.dueDate &&
-        new Date(t.dueDate).getTime() >= now &&
-        new Date(t.dueDate).getTime() < now + dayMs
-    ).length;
-    const pending = all.length - done;
-    const pct = all.length > 0 ? Math.round((done / all.length) * 100) : 0;
-    return { total: all.length, done, pending, overdue, dueSoon, pct };
-  }, [tasks]);
+  // stats agregados delegados pra @shared/taskStats (testável + usa
+  // mesma lógica de urgência que a página Tarefas).
+  const stats = useMemo(() => computeTaskStats(tasks ?? []), [tasks]);
 
   // Streak: dias consecutivos até hoje com qualquer atividade.
   // Local-only: usa dados já carregados no dashboard, sem query extra.
