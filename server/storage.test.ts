@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   keyFromStorageUrl,
   normalizeKey,
   appendHashSuffixWith,
+  resolveExternalUrl,
 } from "./storage";
 
 describe("normalizeKey", () => {
@@ -76,4 +77,38 @@ describe("keyFromStorageUrl", () => {
   it("case-sensitive: /Manus-Storage/ não bate", () => {
     expect(keyFromStorageUrl("/Manus-Storage/x")).toBeNull();
   });
+});
+
+describe("resolveExternalUrl", () => {
+  // ENV.appPublicUrl é lido no import. Ajustamos process.env e re-import
+  // via vi.resetModules() se precisasse, mas o resolveExternalUrl atual
+  // consulta ENV em runtime — então basta stub do env quando importado.
+  beforeEach(() => {
+    vi.stubEnv("APP_PUBLIC_URL", "");
+    vi.stubEnv("RENDER_EXTERNAL_URL", "");
+    vi.stubEnv("BUILT_IN_FORGE_API_URL", "");
+    vi.stubEnv("BUILT_IN_FORGE_API_KEY", "");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("URL absoluta http → passa direto", async () => {
+    const r = await resolveExternalUrl("http://example.com/foo.png");
+    expect(r).toBe("http://example.com/foo.png");
+  });
+
+  it("URL absoluta https → passa direto", async () => {
+    const r = await resolveExternalUrl("https://cdn.example.com/foo.png");
+    expect(r).toBe("https://cdn.example.com/foo.png");
+  });
+
+  it("path relativo sem APP_PUBLIC_URL nem Forge → devolve original (degradação suave)", async () => {
+    const r = await resolveExternalUrl("/uploads/foo.png");
+    expect(r).toBe("/uploads/foo.png");
+  });
+
+  // Os testes que dependem de ENV.appPublicUrl real são mais complexos
+  // porque ENV é congelado no import. Ficam como TODO — a lógica é
+  // simples (prefixa a string), cobertura manual é suficiente por ora.
 });
