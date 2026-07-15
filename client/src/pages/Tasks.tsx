@@ -24,6 +24,7 @@ import { Streamdown } from "streamdown";
 import { normalize } from "@shared/normalize";
 import { buildWhatsappReminderUrl } from "@shared/whatsappUrl";
 import { sortTasks } from "@shared/sortTasks";
+import { isDueSoon, isOverdue } from "@shared/taskUrgency";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -665,15 +666,8 @@ export default function Tasks() {
             const pri = normalize(task.priority);
             const dif = normalize(task.difficulty);
             const isDone = normalize(task.status) === "concluida";
-            const isOverdue =
-              !isDone &&
-              task.dueDate &&
-              new Date(task.dueDate).getTime() < Date.now();
-            const dueSoon =
-              !isDone &&
-              !isOverdue &&
-              task.dueDate &&
-              new Date(task.dueDate).getTime() < Date.now() + 24 * 60 * 60 * 1000;
+            const overdue = isOverdue(task);
+            const dueSoon = isDueSoon(task);
             const priClass = priorityColors[pri as keyof typeof priorityColors] ?? "bg-muted text-muted-foreground";
             const difClass = difficultyColors[dif as keyof typeof difficultyColors] ?? "bg-muted text-muted-foreground";
             return (
@@ -741,11 +735,11 @@ export default function Tasks() {
                         )}
                         {task.dueDate && (
                           <span
-                            className={`flex items-center gap-1 ${isOverdue ? "text-red-500 font-medium" : dueSoon ? "text-amber-500 font-medium" : ""}`}
+                            className={`flex items-center gap-1 ${overdue ? "text-red-500 font-medium" : dueSoon ? "text-amber-500 font-medium" : ""}`}
                           >
                             <Clock className="w-4 h-4" />
                             {new Date(task.dueDate).toLocaleDateString("pt-BR")}
-                            {isOverdue && (
+                            {overdue && (
                               <span className="ml-1 px-1.5 py-0.5 rounded text-xs bg-red-500/10">
                                 Atrasada
                               </span>
