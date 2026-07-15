@@ -15,6 +15,7 @@ import { normalize } from "@shared/normalize";
 import { parseUserDate } from "./utils/parseUserDate";
 import { llmText } from "./utils/llmText";
 import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
+import { extractMarkdownTitle } from "@shared/markdownTitle";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -245,13 +246,16 @@ export async function executeAgentTool(
         });
         const guide = llmText(response.choices[0]?.message?.content);
         if (!guide.trim()) return { ok: false, summary: "A IA não conseguiu gerar o guia dessa vez." };
+        // Título vindo do próprio heading do LLM quando existir.
+        const derivedTitle = extractMarkdownTitle(guide);
+        const guideTitle = derivedTitle || `Guia: ${args.subject || topico.slice(0, 40)}`;
         await db.createStudyGuide({
           userId,
-          title: `Guia: ${args.subject || topico.slice(0, 40)}`,
+          title: guideTitle,
           subject: args.subject ? String(args.subject) : undefined,
           content: guide,
         });
-        return { ok: true, summary: `Guia de estudo criado${args.subject ? ` de ${args.subject}` : ""}.`, data: { title: `Guia: ${args.subject || topico.slice(0, 40)}` } };
+        return { ok: true, summary: `Guia de estudo criado${args.subject ? ` de ${args.subject}` : ""}.`, data: { title: guideTitle } };
       }
 
       case "gerar_cronograma": {

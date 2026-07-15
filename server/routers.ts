@@ -18,6 +18,7 @@ import { generateCompletion } from "./autoComplete";
 import { buildChatSystemPrompt } from "./chatPrompt";
 import { llmText } from "./utils/llmText";
 import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
+import { extractMarkdownTitle } from "@shared/markdownTitle";
 
 export const appRouter = router({
   system: systemRouter,
@@ -641,9 +642,13 @@ export const appRouter = router({
           });
         }
 
+        // Título derivado do primeiro heading do próprio guia — mais
+        // descritivo que "Guia: Matemática". Fallback pro comportamento
+        // antigo quando o LLM não abriu com heading.
+        const derivedTitle = extractMarkdownTitle(guideStr);
         return await db.createStudyGuide({
           userId: ctx.user.id,
-          title: `Guia: ${input.subject || "Sem título"}`,
+          title: derivedTitle || `Guia: ${input.subject || "Sem título"}`,
           subject: input.subject,
           content: guideStr,
         });
