@@ -106,4 +106,24 @@ describe("sendDueReminders", () => {
     expect(db.updateEmailReminder).not.toHaveBeenCalled();
     expect(r.failed).toBe(1);
   });
+
+  it("fila vazia → devolve zeros sem fazer nenhuma chamada", async () => {
+    (db.getPendingEmailReminders as any).mockResolvedValue([]);
+    const r = await sendDueReminders();
+    expect(r).toEqual({ sent: 0, failed: 0, skipped: 0 });
+    expect(db.getTaskById).not.toHaveBeenCalled();
+    expect(sendReminderEmail).not.toHaveBeenCalled();
+    expect(db.updateEmailReminder).not.toHaveBeenCalled();
+  });
+
+  it("falha SÓ no getIntegrationSettings vira 'failed' (não vaza)", async () => {
+    (db.getPendingEmailReminders as any).mockResolvedValue([reminder]);
+    (db.getTaskById as any).mockResolvedValue({ title: "X", status: "pendente" });
+    (db.getIntegrationSettings as any).mockRejectedValue(new Error("db down"));
+    const r = await sendDueReminders();
+    expect(r.failed).toBe(1);
+    expect(sendReminderEmail).not.toHaveBeenCalled();
+    // Não marcou sent, então o cron tenta de novo depois.
+    expect(db.updateEmailReminder).not.toHaveBeenCalled();
+  });
 });
