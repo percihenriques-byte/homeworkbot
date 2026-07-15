@@ -24,6 +24,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { normalize } from "@shared/normalize";
 import { computeStreak } from "@shared/computeStreak";
 import { computeTaskStats } from "@shared/taskStats";
+import { computeStudyStats } from "@shared/studyStats";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -71,35 +72,16 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [tasks]);
 
-  const studyStats = useMemo(() => {
-    const cards = (flashcards ?? []) as any[];
-    const reviews = cards.reduce((sum, c) => sum + (Number(c.timesReviewed) || 0), 0);
-
-    // Dias ativos nos últimos 7 dias: coleta os dias (local) com qualquer
-    // atividade — tarefa concluída, flashcard revisado, conversa ou memória.
-    const now = Date.now();
-    const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
-    const activeDays = new Set<string>();
-    const mark = (ts: any) => {
-      if (!ts) return;
-      const t = new Date(ts).getTime();
-      if (Number.isFinite(t) && t >= weekAgo && t <= now) {
-        activeDays.add(new Date(ts).toLocaleDateString("pt-BR"));
-      }
-    };
-    (tasks ?? []).forEach((t: any) => mark(t.completedAt));
-    cards.forEach((c) => mark(c.lastReviewedAt));
-    (conversations ?? []).forEach((c: any) => mark(c.updatedAt));
-    (memories ?? []).forEach((m: any) => mark(m.createdAt));
-
-    return {
-      flashcards: cards.length,
-      reviews,
-      conversations: (conversations ?? []).length,
-      memories: (memories ?? []).length,
-      activeDays: activeDays.size,
-    };
-  }, [tasks, flashcards, conversations, memories]);
+  const studyStats = useMemo(
+    () =>
+      computeStudyStats({
+        tasks: (tasks ?? []) as any,
+        flashcards: (flashcards ?? []) as any,
+        conversations: (conversations ?? []) as any,
+        memories: (memories ?? []) as any,
+      }),
+    [tasks, flashcards, conversations, memories]
+  );
 
   return (
     <div className="space-y-6">
