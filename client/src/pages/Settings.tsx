@@ -428,6 +428,10 @@ export default function Settings() {
                           Quando ligado, cada tarefa nova sincronizada é feita pela IA no seu estilo e
                           enviada pro seu Gmail — tudo sozinho. (Precisa do Gmail configurado abaixo.)
                         </p>
+                        <p className="text-xs text-muted-foreground break-words mt-1">
+                          <strong>Dica:</strong> vá em <em>Memórias</em> e anexe fotos de atividades
+                          já respondidas — a IA usa como referência visual pra imitar seu jeito.
+                        </p>
                       </div>
                       <Switch
                         checked={integrationData.toddleEnabled}
