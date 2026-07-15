@@ -26,6 +26,7 @@ import { computeTaskStats } from "@shared/taskStats";
 import { computeStudyStats } from "@shared/studyStats";
 import { getUpcomingTasks } from "@shared/upcomingTasks";
 import { isDueSoon } from "@shared/taskUrgency";
+import { formatDate } from "@shared/formatDate";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -299,7 +300,7 @@ export default function Dashboard() {
                       variant={dueSoon ? "destructive" : "secondary"}
                       className="text-xs whitespace-nowrap"
                     >
-                      {new Date(t.dueDate!).toLocaleDateString("pt-BR")}
+                      {formatDate(t.dueDate, { relative: true })}
                     </Badge>
                     </button>
                   </li>
