@@ -71,7 +71,16 @@ export default function Home() {
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </a>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto min-h-12">
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto min-h-12"
+              onClick={() =>
+                document
+                  .getElementById("features")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
               Saber Mais
             </Button>
           </div>
@@ -79,7 +88,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-card/30">
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-card/30">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-center mb-12 sm:mb-16 break-words">Recursos Poderosos</h2>
 
@@ -138,11 +147,11 @@ export default function Home() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-6 break-words">Pronto para Revolucionar Seus Estudos?</h2>
           <p className="text-lg sm:text-xl text-muted-foreground mb-8 break-words">
-            Crie sua conta agora e comece a estudar de forma inteligente.
+            Entre com sua senha e comece a estudar de forma inteligente.
           </p>
           <a href={getLoginUrl()}>
             <Button size="lg" className="gap-2 min-h-12">
-              Criar Conta Grátis
+              Entrar
               <ArrowRight className="w-4 h-4" />
             </Button>
           </a>
