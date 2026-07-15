@@ -100,4 +100,16 @@ describe("compareTasks / sortTasks", () => {
   it("array vazio devolve array vazio", () => {
     expect(sortTasks([])).toEqual([]);
   });
+
+  it("dueDate inválida (NaN) trata como sem prazo — não quebra ordem", () => {
+    // Sem o Number.isFinite guard, NaN nas comparações deixaria o sort
+    // não-determinístico (compareFn retornando NaN é UB).
+    const sorted = sortTasks([
+      t({ id: 1, priority: "alta", dueDate: "nao-e-data" as any }),
+      t({ id: 2, priority: "alta", dueDate: new Date(2026, 6, 10) }),
+      t({ id: 3, priority: "alta", dueDate: new Date(2026, 6, 20) }),
+    ]);
+    // id=1 tem prazo inválido → tratado como Infinity → vai pro fim.
+    expect(sorted.map((x) => x.id)).toEqual([2, 3, 1]);
+  });
 });

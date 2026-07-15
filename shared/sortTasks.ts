@@ -23,7 +23,11 @@ function prioRank(s: SortableTask): number {
 }
 
 function dueMs(s: SortableTask): number {
-  return s.dueDate ? new Date(s.dueDate).getTime() : Infinity;
+  if (!s.dueDate) return Infinity;
+  const ms = new Date(s.dueDate).getTime();
+  // Data inválida (NaN) trata como "sem prazo" — evita comparação
+  // não-determinística no sort.
+  return Number.isFinite(ms) ? ms : Infinity;
 }
 
 /**
