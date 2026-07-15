@@ -7,4 +7,13 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // URL pública do próprio app. Sem Forge (deploy standalone tipo Render),
+  // usamos essa pra transformar /uploads/foo.png em URL absoluta que o LLM
+  // consegue baixar. Render injeta RENDER_EXTERNAL_URL sozinho; em outros
+  // hosts, defina APP_PUBLIC_URL manualmente. Sem trailing slash.
+  appPublicUrl: (
+    process.env.APP_PUBLIC_URL ??
+    process.env.RENDER_EXTERNAL_URL ??
+    ""
+  ).replace(/\/+$/, ""),
 };

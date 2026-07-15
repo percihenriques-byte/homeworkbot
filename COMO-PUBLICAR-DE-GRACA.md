@@ -74,6 +74,9 @@ Tempo total: ~20–30 minutos.
   uns 30–50s pra acordar no primeiro acesso. Normal.
 - **Uploads de arquivo:** funcionam, mas o disco grátis é temporário — arquivos podem sumir num
   redeploy. Recurso secundário.
+- **IA olhar imagens (memórias com foto):** o Render seta `RENDER_EXTERNAL_URL` sozinho, então
+  o app monta URL absoluta pras imagens que envia ao LLM. Em outros hosts, defina
+  `APP_PUBLIC_URL=https://seu-dominio` na Environment pra o mesmo efeito.
 - **Lembretes automáticos por e-mail:** o disparo automático dependia do agendador do Manus. Fora
   dele, dá pra ligar um cron grátis externo (ex: **cron-job.org**) chamando, de hora em hora,
   `https://SEU-SITE/api/scheduled/send-reminders`. (Opcional — o resto funciona sem isso.)

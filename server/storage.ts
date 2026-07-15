@@ -120,20 +120,34 @@ export function keyFromStorageUrl(url: string): string | null {
 
 /**
  * Resolve uma URL de arquivo para algo que um consumidor EXTERNO (ex: o
- * provedor do LLM baixando image_url/file_url) consiga acessar. Paths
- * relativos /manus-storage/ só resolvem no próprio host do Manus, então
- * trocamos por uma URL absoluta pré-assinada do S3. URLs já absolutas
- * (http/https) passam direto. Em qualquer falha, devolve a url original
- * (degradação suave — melhor tentar do que quebrar o fluxo).
+ * provedor do LLM baixando image_url/file_url) consiga acessar. Casos:
+ *   1. URL já é absoluta (http/https) → passa direto.
+ *   2. /manus-storage/... e Forge configurado → S3 pré-assinado.
+ *   3. Qualquer path relativo (/uploads/, /manus-storage/ sem Forge) e
+ *      appPublicUrl definido → prefixa com o host público do app.
+ *   4. Fallback: devolve a url original (degradação suave).
  */
 export async function resolveExternalUrl(url: string): Promise<string> {
+  // 1. URL absoluta — nada a fazer.
+  if (/^https?:\/\//i.test(url)) return url;
+
+  // 2. Manus-storage com Forge → pré-assinado.
   const key = keyFromStorageUrl(url);
-  if (!key) return url;
-  try {
-    return await storageGetSignedUrl(key);
-  } catch {
-    return url;
+  if (key && forgeConfigured()) {
+    try {
+      return await storageGetSignedUrl(key);
+    } catch {
+      // cai no fallback abaixo
+    }
   }
+
+  // 3. Path relativo + host público conhecido → absoluta.
+  if (url.startsWith("/") && ENV.appPublicUrl) {
+    return `${ENV.appPublicUrl}${url}`;
+  }
+
+  // 4. Sem host, sem Forge — devolve original (LLM pode não conseguir).
+  return url;
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
