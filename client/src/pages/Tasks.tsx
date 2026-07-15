@@ -22,6 +22,7 @@ import { Plus, Trash2, Edit2, Clock, Zap, AlertCircle, RefreshCw, BookMarked, Ci
 import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { normalize } from "@shared/normalize";
+import { buildWhatsappReminderUrl } from "@shared/whatsappUrl";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -99,20 +100,15 @@ export default function Tasks() {
 
   // Gera um link wa.me (click-to-chat) com o lembrete pronto. Sem API:
   // apenas abre o WhatsApp do próprio usuário com a mensagem preenchida —
-  // o envio é feito por ele. Se não houver número configurado, abre a
-  // versão SEM número (wa.me/?text=...) que deixa o usuário escolher contato.
+  // o envio é feito por ele. Lógica extraída em @shared/whatsappUrl
+  // para poder testar.
   const handleWhatsappReminder = (task: any) => {
-    const phone = String(integrationSettings?.whatsappPhoneNumber || "").replace(/\D/g, "");
-    const due = task.dueDate ? new Date(task.dueDate).toLocaleDateString("pt-BR") : "sem prazo";
-    const msg =
-      `📚 Lembrete de tarefa: ${task.title}` +
-      (task.subject ? ` (${task.subject})` : "") +
-      `\nPrazo: ${due}`;
-    // Se não tem phone válido, cai no formato genérico (WhatsApp mostra
-    // seletor de contato). Se tem, vai direto pra conversa com o número.
-    const url = phone
-      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
-      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    const url = buildWhatsappReminderUrl({
+      phone: integrationSettings?.whatsappPhoneNumber,
+      title: task.title,
+      subject: task.subject,
+      dueDate: task.dueDate,
+    });
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
