@@ -149,15 +149,23 @@ export default function Tasks() {
   const [editingId, setEditingId] = useState<number | null>(null);
   // Filtro persiste entre visitas via localStorage — usuario que trabalha
   // sempre em "concluidas" nao precisa mudar toda vez que abre a pagina.
+  // try/catch: Safari privado / storage bloqueado joga em getItem também.
   const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas" | "atrasadas">(() => {
     if (typeof window === "undefined") return "pendentes";
-    const saved = localStorage.getItem("tasks-filter");
-    return saved === "todas" ||
-      saved === "pendentes" ||
-      saved === "concluidas" ||
-      saved === "atrasadas"
-      ? saved
-      : "pendentes";
+    try {
+      const saved = localStorage.getItem("tasks-filter");
+      if (
+        saved === "todas" ||
+        saved === "pendentes" ||
+        saved === "concluidas" ||
+        saved === "atrasadas"
+      ) {
+        return saved;
+      }
+    } catch {
+      // storage indisponível — fica no default
+    }
+    return "pendentes";
   });
   useEffect(() => {
     try {
