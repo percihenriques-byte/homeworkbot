@@ -40,15 +40,38 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
 
   let text = "";
   try {
-    const resp = await fetch(fetchUrl, {
-      headers: { Accept: "text/calendar, text/plain, */*" },
-      redirect: "follow",
-    });
+    // Timeout de 15s protege o cron de travar em servidor lento.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    let resp: Response;
+    try {
+      resp = await fetch(fetchUrl, {
+        headers: { Accept: "text/calendar, text/plain, */*" },
+        redirect: "follow",
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
     if (!resp.ok) {
-      throw new Error(`o servidor do calendário respondeu ${resp.status}`);
+      // Mensagens mais amigáveis pros erros HTTP mais comuns.
+      let msg: string;
+      if (resp.status === 404) msg = "link do calendário não existe (404). Confira se o endereço está certo.";
+      else if (resp.status === 401 || resp.status === 403) msg = `o calendário exige autenticação (${resp.status}). Use um link público / de assinatura.`;
+      else if (resp.status >= 500) msg = `o servidor do calendário está fora do ar (${resp.status}). Tente novamente daqui a pouco.`;
+      else msg = `o servidor do calendário respondeu ${resp.status}.`;
+      throw new Error(msg);
     }
     text = await resp.text();
+    // Sanity: feed enorme (> 5MB) provavelmente é erro/HTML.
+    if (text.length > 5_000_000) {
+      throw new Error(`o feed retornou ${(text.length / 1024 / 1024).toFixed(1)}MB — grande demais para ser um .ics válido.`);
+    }
   } catch (err: any) {
+    // AbortError = timeout, tem código específico.
+    if (err?.name === "AbortError") {
+      throw new Error("Não consegui acessar o calendário: o servidor demorou demais para responder (>15s).");
+    }
     throw new Error(`Não consegui acessar o calendário: ${String(err?.message ?? err)}`);
   }
 
