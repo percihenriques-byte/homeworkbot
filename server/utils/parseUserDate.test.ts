@@ -75,4 +75,20 @@ describe("parseUserDate", () => {
     expect(d.getMonth()).toBe(11);
     expect(d.getDate()).toBe(31);
   });
+
+  it("rejeita mês 13 e mês 00 (não normaliza silenciosamente)", () => {
+    expect(parseUserDate("2026-13-01")).toBeUndefined();
+    expect(parseUserDate("2026-00-15")).toBeUndefined();
+  });
+
+  it("rejeita dia 32 e 30/fev", () => {
+    expect(parseUserDate("2026-01-32")).toBeUndefined();
+    expect(parseUserDate("2026-02-30")).toBeUndefined();
+    expect(parseUserDate("2026-04-31")).toBeUndefined();
+  });
+
+  it("29/fev só em ano bissexto", () => {
+    expect(parseUserDate("2026-02-29")).toBeUndefined(); // não bissexto
+    expect(parseUserDate("2028-02-29")).toBeDefined(); // bissexto
+  });
 });
