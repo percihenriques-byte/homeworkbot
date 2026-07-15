@@ -182,7 +182,12 @@ export async function executeAgentTool(
                 `Formato: [{"question": "...", "answer": "...", "difficulty": "fácil"|"médio"|"difícil"}] ` +
                 `Gere ${qtd} flashcards de alta qualidade.`,
             },
-            { role: "user", content: `Crie flashcards sobre: ${topico}` },
+            {
+              role: "user",
+              content: args.subject
+                ? `Disciplina: ${args.subject}\n\nCrie flashcards sobre: ${topico}`
+                : `Crie flashcards sobre: ${topico}`,
+            },
           ],
         });
         const parsed = extractJson<any[]>(response.choices[0]?.message?.content);
@@ -213,7 +218,12 @@ export async function executeAgentTool(
                 `Retorne APENAS um objeto JSON puro, sem texto, sem markdown. ` +
                 `Formato: {"questions": [{"question": "...", "options": ["A","B","C","D"], "correctAnswer": "A"}]}`,
             },
-            { role: "user", content: `Crie um quiz com ${qtd} perguntas sobre: ${topico}` },
+            {
+              role: "user",
+              content: args.subject
+                ? `Disciplina: ${args.subject}\n\nCrie um quiz com ${qtd} perguntas sobre: ${topico}`
+                : `Crie um quiz com ${qtd} perguntas sobre: ${topico}`,
+            },
           ],
         });
         const parsed = extractJson<{ questions?: any[] }>(response.choices[0]?.message?.content);
@@ -242,7 +252,12 @@ export async function executeAgentTool(
                 `listas, e seções "Conceitos-chave", "Exemplos" e "Como estudar". ` +
                 `Não use code fence — apenas o Markdown direto.`,
             },
-            { role: "user", content: `Crie um guia de estudo sobre: ${topico}` },
+            {
+              role: "user",
+              content: args.subject
+                ? `Disciplina: ${args.subject}\n\nCrie um guia de estudo sobre: ${topico}`
+                : `Crie um guia de estudo sobre: ${topico}`,
+            },
           ],
         });
         const guide = llmText(response.choices[0]?.message?.content);
