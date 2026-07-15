@@ -6,7 +6,7 @@
 //
 // Config (env):
 //   GEMINI_API_KEY  — chave grátis do Google AI Studio (aistudio.google.com/apikey)
-//   GEMINI_MODEL    — opcional, padrão "gemini-2.0-flash"
+//   GEMINI_MODEL    — opcional, padrão "gemini-2.5-flash"
 //
 // Sem GEMINI_API_KEY, cai no Forge do Manus (compatibilidade — útil só se a
 // conta voltar). Sem nenhum dos dois, lança erro claro.
@@ -31,7 +31,7 @@ export type {
 
 // Lidos na hora da chamada (não no carregamento) — assim o env pode mudar e dá pra testar.
 const geminiKey = () => process.env.GEMINI_API_KEY ?? "";
-const geminiModel = () => process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const geminiModel = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Converte um JSON Schema (nosso formato OpenAI) pro Schema do Gemini, que

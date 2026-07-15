@@ -14,7 +14,9 @@ Tempo total: ~20–30 minutos.
 2. Clique **"Create API key"** / "Criar chave de API".
 3. Copie a chave (algo tipo `AIza...`). **Guarde** — vai colar no Passo 3.
 
-> É grátis, sem cartão. Tem limite diário generoso, mais que suficiente pro uso escolar.
+> É grátis, sem cartão. O app usa o modelo **gemini-2.5-flash** (grátis: ~250 usos/dia, 10/min) —
+> de sobra pro uso escolar. Se um dia quiser mais, dá pra trocar pra `gemini-2.5-flash-lite`
+> (1000/dia) pondo `GEMINI_MODEL=gemini-2.5-flash-lite` nas variáveis do Render.
 
 ---
 
