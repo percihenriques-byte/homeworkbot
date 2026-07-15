@@ -47,6 +47,12 @@ export default function Settings() {
   const [showGmailPw, setShowGmailPw] = useState(false);
 
   const sendTestEmailMutation = trpc.email.sendTest.useMutation();
+  const syncToddleMutation = trpc.toddle.sync.useMutation();
+  const [toddleTestResult, setToddleTestResult] = useState<
+    | null
+    | { kind: "ok"; imported: number; total: number; skipped: number }
+    | { kind: "err"; message: string }
+  >(null);
 
   useEffect(() => {
     if (prefs) {
@@ -134,6 +140,41 @@ export default function Settings() {
       toast.success("Integrações configuradas!");
     } catch (error: any) {
       toast.error(error?.message || "Erro ao configurar integrações");
+    }
+  };
+
+  const handleTestToddleFeed = async () => {
+    const raw = integrationData.toddleApiKey;
+    if (!raw.trim()) {
+      toast.error("Cole o link do calendário antes de testar.");
+      return;
+    }
+    const feed = classifyFeedUrl(raw);
+    if (!feed.ok) {
+      toast.error(`Link inválido: ${feed.message}`);
+      return;
+    }
+    setToddleTestResult(null);
+    try {
+      // Salva primeiro pra o servidor buscar com o link que está na tela,
+      // não com o antigo do banco (mesmo padrão do teste de e-mail).
+      await updateIntegrationMutation.mutateAsync(integrationData);
+      const r = await syncToddleMutation.mutateAsync();
+      setToddleTestResult({
+        kind: "ok",
+        imported: r.imported ?? 0,
+        total: r.total ?? 0,
+        skipped: r.skipped ?? 0,
+      });
+      toast.success(
+        r.imported > 0
+          ? `Sincronizado! ${r.imported} tarefa(s) nova(s).`
+          : "Sincronizado! Nenhuma tarefa nova (já estavam todas aqui)."
+      );
+    } catch (err: any) {
+      const message = err?.message || "Falha ao sincronizar.";
+      setToddleTestResult({ kind: "err", message });
+      toast.error(message);
     }
   };
 
@@ -322,6 +363,33 @@ export default function Settings() {
                       Cole aqui o link de assinatura do calendário do Toddle (ou Google/Outlook). Com ele,
                       o app busca suas tarefas <strong>automaticamente</strong>, sem você precisar fazer nada.
                     </p>
+                    <div className="mt-3 flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleTestToddleFeed}
+                        disabled={
+                          syncToddleMutation.isPending ||
+                          !integrationData.toddleApiKey.trim() ||
+                          !classifyFeedUrl(integrationData.toddleApiKey).ok
+                        }
+                        className="min-h-10"
+                      >
+                        {syncToddleMutation.isPending ? "Testando..." : "Testar link agora"}
+                      </Button>
+                      {toddleTestResult?.kind === "ok" && (
+                        <span className="text-xs text-green-400 break-words" role="status">
+                          ✓ Achei {toddleTestResult.total} evento(s) — importei {toddleTestResult.imported},{" "}
+                          {toddleTestResult.skipped} já existiam.
+                        </span>
+                      )}
+                      {toddleTestResult?.kind === "err" && (
+                        <span className="text-xs text-red-400 break-words" role="alert">
+                          ✗ {toddleTestResult.message}
+                        </span>
+                      )}
+                    </div>
                     <details className="mt-2 text-xs text-muted-foreground">
                       <summary className="cursor-pointer hover:text-foreground">Como pego esse link? (passo a passo)</summary>
                       <ul className="mt-2 space-y-1 pl-4 list-disc break-words">
