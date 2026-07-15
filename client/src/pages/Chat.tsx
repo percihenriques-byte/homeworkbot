@@ -3,7 +3,6 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Image as ImageIcon, Loader2, Paperclip, Pencil, Plus, Send, Trash2, X, Sparkles } from "lucide-react";
 import {
   AlertDialog,
@@ -31,7 +30,6 @@ export default function Chat() {
 
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
   const [messageInput, setMessageInput] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -91,7 +89,6 @@ export default function Chat() {
       if (result && typeof result === "object" && "id" in result && typeof result.id === "number") {
         setSelectedConvId(result.id);
       }
-      setIsOpen(false);
       toast.success("Conversa criada!");
     } catch (error: any) {
       toast.error(error?.message || "Erro ao criar conversa");
@@ -298,27 +295,21 @@ export default function Chat() {
       <div className="w-full md:w-64 md:border-r border-border flex flex-col border-b md:border-b-0 max-h-56 md:max-h-none">
         <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
           <h2 className="font-semibold">Conversas</h2>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-11 w-11" aria-label="Nova conversa">
-                <Plus className="w-5 h-5" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Nova Conversa</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Crie uma nova conversa com o assistente de IA.</p>
-                <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                  <Button variant="outline" onClick={() => setIsOpen(false)} className="min-h-11">Cancelar</Button>
-                  <Button onClick={handleCreateConversation} disabled={createConvMutation.isPending} className="min-h-11">
-                    {createConvMutation.isPending ? "Criando..." : "Criar"}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-11 w-11"
+            aria-label="Nova conversa"
+            title="Nova conversa"
+            onClick={handleCreateConversation}
+            disabled={createConvMutation.isPending}
+          >
+            {createConvMutation.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Plus className="w-5 h-5" />
+            )}
+          </Button>
         </div>
         <div className="flex-1 overflow-y-auto space-y-2 p-3 md:p-4">
           {conversations?.map((conv) => {
