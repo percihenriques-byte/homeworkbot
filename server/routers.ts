@@ -15,6 +15,7 @@ import { AGENT_TOOLS, executeAgentTool } from "./agentTools";
 import { syncToddleForUser } from "./toddleSync";
 import { friendlyEmailError } from "./utils/friendlyEmailError";
 import { generateCompletion } from "./autoComplete";
+import { buildChatSystemPrompt } from "./chatPrompt";
 
 export const appRouter = router({
   system: systemRouter,
@@ -227,59 +228,11 @@ export const appRouter = router({
           timestamp: new Date(),
         });
 
-        let systemPrompt =
-          `Você é o Jarvis de Estudos — um assistente escolar AGÊNTICO em Português (BR), no estilo do Manus. ` +
-          `Você não é um bot de perguntas e respostas: você PLANEJA, EXECUTA e RELATA.\n\n` +
-          `COMO AGIR:\n` +
-          `1. PLANO — para qualquer pedido que envolva mais de um passo (ex: "cria a tarefa da prova e gera flashcards"), ` +
-          `primeiro mostre um plano curto numerado do que vai fazer.\n` +
-          `2. EXECUÇÃO — use as ferramentas disponíveis para REALMENTE fazer as coisas (criar tarefas, gerar flashcards, ` +
-          `quizzes, guias de estudo e cronogramas). Não diga "você pode criar" — crie você mesmo pela ferramenta. ` +
-          `Execute os passos na ordem e narre o progresso ("✅ Tarefa criada", "✅ 8 flashcards gerados").\n` +
-          `3. RELATÓRIO — ao final, resuma o que foi feito e sugira o próximo passo útil.\n\n` +
-          `ESTILO: respostas ricas e organizadas — listas numeradas, marcadores, emojis de sinalização (✅ 📌 📝 🎯), ` +
-          `títulos curtos em negrito quando ajudar. Seja acolhedor e claro (o usuário é um estudante). ` +
-          `Sempre em Português (BR). Se o pedido for só uma dúvida conceitual, responda direto e bem, sem inventar plano.`;
-
-        // Data de hoje no prompt: sem isso o agente não consegue converter
-        // "sexta", "amanhã", "semana que vem" na data absoluta certa ao criar
-        // tarefas. Fuso de São Paulo (pt-BR).
-        const hoje = new Date();
-        const hojeStr = hoje.toLocaleDateString("pt-BR", {
-          weekday: "long",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-          timeZone: "America/Sao_Paulo",
+        const systemPrompt = buildChatSystemPrompt({
+          aiStyle: prefs?.aiStyle ?? null,
+          task: taskContext,
+          memories: memories ?? [],
         });
-        systemPrompt += `\n\nData de hoje: ${hojeStr} (ISO: ${hoje.toISOString().slice(0, 10)}). ` +
-          `Use isso para converter prazos relativos (ex: "sexta", "amanhã") em datas absolutas (AAAA-MM-DD).`;
-
-        if (prefs?.aiStyle) {
-          systemPrompt += `\n\nEstilo preferido do usuário: ${prefs.aiStyle}`;
-        }
-
-        if (taskContext) {
-          systemPrompt += `\n\nEsta conversa está associada à tarefa do usuário:\n`;
-          systemPrompt += `- Título: ${taskContext.title}\n`;
-          if (taskContext.subject) systemPrompt += `- Disciplina: ${taskContext.subject}\n`;
-          if (taskContext.type) systemPrompt += `- Tipo: ${taskContext.type}\n`;
-          if (taskContext.dueDate)
-            systemPrompt += `- Prazo: ${new Date(taskContext.dueDate).toLocaleDateString("pt-BR")}\n`;
-          if (taskContext.description)
-            systemPrompt += `- Descrição: ${taskContext.description}\n`;
-          if (taskContext.notes)
-            systemPrompt += `- Anotações do usuário: ${taskContext.notes}\n`;
-          systemPrompt += `\nUse esse contexto para ajudar a resolver ou completar essa tarefa específica.`;
-        }
-
-        if (memories && memories.length > 0) {
-          systemPrompt += `\n\nMemórias e referências do usuário para personalização:\n`;
-          for (const memory of memories.slice(0, 5)) {
-            systemPrompt += `\n- ${memory.title}${memory.category ? ` (${memory.category})` : ''}: ${memory.content.substring(0, 300)}...`;
-          }
-          systemPrompt += `\n\nUse essas memórias para adaptar seu tom, estilo, abordagem e forma de responder.`;
-        }
 
         // Limita o payload enviado ao LLM às últimas N mensagens.
         // Conversas longas eram enviadas por inteiro — custava caro e
