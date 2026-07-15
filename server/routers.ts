@@ -825,6 +825,9 @@ export const appRouter = router({
         category: z.string().max(255).optional(),
         content: z.string().min(1, "Conteúdo é obrigatório").max(200000),
         source: z.string().max(100).optional(),
+        // Fotos de atividades respondidas — a IA usa como referência
+        // visual em multimodal. Cap em 20 URLs pra evitar prompt gigante.
+        imageUrls: z.array(z.string().min(1).max(2000)).max(20).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return await db.createUserMemory({
@@ -839,6 +842,7 @@ export const appRouter = router({
         category: z.string().max(255).optional(),
         content: z.string().min(1).max(200000).optional(),
         source: z.string().max(100).optional(),
+        imageUrls: z.array(z.string().min(1).max(2000)).max(20).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...updates } = input;

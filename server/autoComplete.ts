@@ -7,6 +7,12 @@ import * as db from "./db";
 import { invokeLLM } from "./llm";
 import { sendCompletedTaskEmail } from "./email";
 import { llmText } from "./utils/llmText";
+import { resolveExternalUrl } from "./storage";
+
+// Máximo de imagens de memória incluídas no prompt multimodal. Fotos
+// altas de atividade custam muitos tokens; 4 já dá amostra visual boa
+// do estilo/letra sem quebrar o context.
+const MEMORY_IMAGES_LIMIT = 4;
 
 type TaskRow = {
   id: number;
@@ -32,10 +38,27 @@ export async function generateCompletion(userId: number, task: TaskRow): Promise
 
   if (prefs?.aiStyle) systemPrompt += `\n\nEstilo preferido: ${prefs.aiStyle}`;
 
+  // Colhe URLs de imagens das memórias pra passar como referência visual
+  // multimodal. Cap global (MEMORY_IMAGES_LIMIT) — 4 fotos já dão amostra
+  // suficiente do estilo/letra sem estourar tokens.
+  const memoryImageUrls: string[] = [];
   if (memories && memories.length > 0) {
     systemPrompt += `\n\nAmostras do estilo de escrita do usuário (imite a forma de escrever):\n`;
     for (const memory of memories.slice(0, 5)) {
       systemPrompt += `\n--- ${memory.title}${memory.category ? ` (${memory.category})` : ""} ---\n${String(memory.content).substring(0, 800)}\n`;
+      if (Array.isArray((memory as any).imageUrls)) {
+        for (const url of (memory as any).imageUrls as unknown[]) {
+          if (typeof url === "string" && url && memoryImageUrls.length < MEMORY_IMAGES_LIMIT) {
+            memoryImageUrls.push(url);
+          }
+        }
+      }
+    }
+    if (memoryImageUrls.length > 0) {
+      systemPrompt +=
+        `\n\nVocê vai receber ${memoryImageUrls.length} foto(s) de atividades ` +
+        `respondidas pelo usuário. IMITE a caligrafia (se manuscrita), o formato ` +
+        `de resposta, uso de setinhas/esquemas, e o nível de detalhamento.`;
     }
   } else {
     systemPrompt +=
@@ -43,7 +66,7 @@ export async function generateCompletion(userId: number, task: TaskRow): Promise
       `direto e claro, frases de tamanho médio, sem gírias exageradas nem termos rebuscados.`;
   }
 
-  const userInstruction =
+  const instructionText =
     `Complete a seguinte tarefa escolar imitando meu estilo:\n\n` +
     `Título: ${task.title}\n` +
     (task.subject ? `Disciplina: ${task.subject}\n` : "") +
@@ -51,10 +74,23 @@ export async function generateCompletion(userId: number, task: TaskRow): Promise
     (task.description ? `\nDescrição da tarefa:\n${task.description}\n` : "") +
     (task.notes ? `\nMinhas anotações:\n${task.notes}\n` : "");
 
+  // Monta content: string simples quando não há imagens (compat com todos
+  // os providers), ou array multimodal quando há.
+  let userContent: any = instructionText;
+  if (memoryImageUrls.length > 0) {
+    const parts: any[] = [{ type: "text", text: instructionText }];
+    for (const url of memoryImageUrls) {
+      // Resolve pra URL absoluta (o LLM baixa direto do S3, não do host).
+      const external = await resolveExternalUrl(url);
+      parts.push({ type: "image_url", image_url: { url: external, detail: "auto" } });
+    }
+    userContent = parts;
+  }
+
   const response = await invokeLLM({
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userInstruction },
+      { role: "user", content: userContent },
     ],
   });
 

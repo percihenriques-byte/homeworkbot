@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("./llm", () => ({ invokeLLM: vi.fn() }));
 vi.mock("./email", () => ({ sendCompletedTaskEmail: vi.fn() }));
+vi.mock("./storage", () => ({
+  // Passa a URL adiante inalterada — testes não precisam do fluxo S3.
+  resolveExternalUrl: vi.fn(async (url: string) => url),
+}));
 vi.mock("./db", () => ({
   getUserPreferences: vi.fn(),
   getUserMemoriesByUserId: vi.fn(),
@@ -41,6 +45,64 @@ describe("generateCompletion", () => {
     const messages = (invokeLLM as any).mock.calls[0][0].messages;
     const systemMsg = messages.find((m: any) => m.role === "system").content;
     expect(systemMsg).toContain("escrevo assim ó");
+  });
+
+  it("sem imagens → user content é string simples (compat todos providers)", async () => {
+    (db.getUserMemoriesByUserId as any).mockResolvedValue([
+      { title: "M1", content: "só texto", imageUrls: null },
+    ]);
+    llmReturns("ok");
+    await generateCompletion(7, task);
+    const messages = (invokeLLM as any).mock.calls[0][0].messages;
+    const userMsg = messages.find((m: any) => m.role === "user");
+    expect(typeof userMsg.content).toBe("string");
+  });
+
+  it("com imagens em memória → user content vira array multimodal com image_url", async () => {
+    (db.getUserMemoriesByUserId as any).mockResolvedValue([
+      {
+        title: "Minha prova",
+        content: "resolução manuscrita",
+        imageUrls: ["/manus-storage/prova1.jpg", "/uploads/prova2.png"],
+      },
+    ]);
+    llmReturns("ok");
+    await generateCompletion(7, task);
+    const messages = (invokeLLM as any).mock.calls[0][0].messages;
+    const userMsg = messages.find((m: any) => m.role === "user");
+    expect(Array.isArray(userMsg.content)).toBe(true);
+    const parts = userMsg.content as any[];
+    expect(parts[0].type).toBe("text");
+    const imageParts = parts.filter((p) => p.type === "image_url");
+    expect(imageParts).toHaveLength(2);
+    expect(imageParts[0].image_url.url).toBe("/manus-storage/prova1.jpg");
+    expect(imageParts[1].image_url.url).toBe("/uploads/prova2.png");
+
+    // System prompt deve mencionar as fotos
+    const sys = messages.find((m: any) => m.role === "system").content;
+    expect(sys).toMatch(/2 foto\(s\)/i);
+  });
+
+  it("cap em 4 imagens totais mesmo se memórias tiverem mais", async () => {
+    (db.getUserMemoriesByUserId as any).mockResolvedValue([
+      { title: "M1", content: "x", imageUrls: ["a", "b", "c"] },
+      { title: "M2", content: "y", imageUrls: ["d", "e", "f"] },
+    ]);
+    llmReturns("ok");
+    await generateCompletion(7, task);
+    const userMsg = (invokeLLM as any).mock.calls[0][0].messages.find(
+      (m: any) => m.role === "user"
+    );
+    const imageParts = (userMsg.content as any[]).filter((p) => p.type === "image_url");
+    expect(imageParts).toHaveLength(4);
+  });
+
+  it("imageUrls não-array (dado sujo) é ignorado sem crashar", async () => {
+    (db.getUserMemoriesByUserId as any).mockResolvedValue([
+      { title: "M", content: "x", imageUrls: "not-array" as any },
+    ]);
+    llmReturns("ok");
+    await expect(generateCompletion(7, task)).resolves.toBeDefined();
   });
 });
 

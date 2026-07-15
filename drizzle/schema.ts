@@ -165,6 +165,11 @@ export const userMemories = mysqlTable("userMemories", {
   category: varchar("category", { length: 255 }), // e.g., "ChatGPT - Matemática", "Meu estilo de escrita"
   content: text("content").notNull(), // Full conversation log or memory text
   source: varchar("source", { length: 100 }), // e.g., "ChatGPT", "Claude", "Gemini", "Manual"
+  // Fotos de atividades já respondidas — a IA olha essas imagens junto
+  // com o content textual pra aprender como o usuário escreve à mão,
+  // formata a resposta, resolve etapas etc. Array de URLs (/manus-storage/
+  // ou /uploads/). null = sem imagens.
+  imageUrls: json("imageUrls"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

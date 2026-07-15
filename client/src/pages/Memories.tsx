@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,27 +18,43 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { formatDate } from "@shared/formatDate";
-import { Plus, Trash2, Brain, Pencil } from "lucide-react";
+import { Plus, Trash2, Brain, Pencil, ImagePlus, X, Loader2 } from "lucide-react";
 
 type MemoryFormData = {
   title: string;
   category: string;
   content: string;
   source: string;
+  imageUrls: string[];
 };
 
-const emptyForm: MemoryFormData = { title: "", category: "", content: "", source: "" };
+const emptyForm: MemoryFormData = { title: "", category: "", content: "", source: "", imageUrls: [] };
+
+// Converte Uint8Array em base64 sem estourar o limite de argumentos do
+// spread. Reutilizamos o mesmo padrão usado no Chat.tsx.
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+}
 
 export default function Memories() {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<MemoryFormData>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: number; title: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: memories, isLoading, refetch } = trpc.memories.list.useQuery();
   const createMutation = trpc.memories.create.useMutation();
   const updateMutation = trpc.memories.update.useMutation();
   const deleteMutation = trpc.memories.delete.useMutation();
+  const uploadMutation = trpc.upload.file.useMutation();
 
   const isEditing = editingId !== null;
   const isSaving = createMutation.isPending || updateMutation.isPending;
@@ -56,8 +72,58 @@ export default function Memories() {
       category: String(memory.category ?? ""),
       content: String(memory.content ?? ""),
       source: String(memory.source ?? ""),
+      imageUrls: Array.isArray(memory.imageUrls) ? memory.imageUrls.map(String) : [],
     });
     setIsOpen(true);
+  };
+
+  const handleAddImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    // Cap total pra respeitar o limite do backend (20 imagens por memória).
+    const remaining = 20 - formData.imageUrls.length;
+    if (remaining <= 0) {
+      toast.error("Máximo 20 imagens por memória.");
+      return;
+    }
+    const arr = Array.from(files).slice(0, remaining);
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of arr) {
+        if (!file.type.startsWith("image/")) {
+          toast.error(`"${file.name}" não é imagem — pulei.`);
+          continue;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`"${file.name}" excede 10MB — pulei.`);
+          continue;
+        }
+        const buffer = await file.arrayBuffer();
+        const base64 = uint8ToBase64(new Uint8Array(buffer));
+        const res = await uploadMutation.mutateAsync({
+          fileName: file.name,
+          fileData: base64,
+          mimeType: file.type,
+        });
+        uploaded.push(res.url);
+      }
+      if (uploaded.length > 0) {
+        setFormData((prev) => ({ ...prev, imageUrls: [...prev.imageUrls, ...uploaded] }));
+        toast.success(`${uploaded.length} imagem(ns) anexada(s)`);
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao enviar imagem");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeImage = (idx: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, i) => i !== idx),
+    }));
   };
 
   const handleSave = async () => {
@@ -66,10 +132,17 @@ export default function Memories() {
       return;
     }
     try {
+      const payload = {
+        title: formData.title,
+        category: formData.category || undefined,
+        content: formData.content,
+        source: formData.source || undefined,
+        imageUrls: formData.imageUrls.length > 0 ? formData.imageUrls : undefined,
+      };
       if (isEditing) {
-        await updateMutation.mutateAsync({ id: editingId!, ...formData });
+        await updateMutation.mutateAsync({ id: editingId!, ...payload });
       } else {
-        await createMutation.mutateAsync(formData);
+        await createMutation.mutateAsync(payload);
       }
       setFormData(emptyForm);
       setEditingId(null);
@@ -83,8 +156,6 @@ export default function Memories() {
 
   const handleDelete = async () => {
     if (!deleteConfirm) return;
-    // Captura a memória completa ANTES de deletar, pra conseguir recriar
-    // caso o usuário clique em "Desfazer".
     const removed = (memories as any[] | undefined)?.find((m) => m.id === deleteConfirm.id);
     try {
       await deleteMutation.mutateAsync({ id: deleteConfirm.id });
@@ -101,6 +172,7 @@ export default function Memories() {
                     category: removed.category ? String(removed.category) : undefined,
                     content: String(removed.content ?? ""),
                     source: removed.source ? String(removed.source) : undefined,
+                    imageUrls: Array.isArray(removed.imageUrls) ? removed.imageUrls.map(String) : undefined,
                   });
                   await refetch();
                   toast.success("Memória restaurada");
@@ -139,7 +211,7 @@ export default function Memories() {
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Título *</label>
             <Input
-              placeholder="Ex: Conversa ChatGPT - Matemática"
+              placeholder="Ex: Redação Independência (feita à mão)"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="bg-input border-input min-h-11"
@@ -159,7 +231,7 @@ export default function Memories() {
             <div>
               <label className="text-sm font-medium text-foreground mb-2 block">Fonte</label>
               <Input
-                placeholder="Ex: ChatGPT, Claude, Gemini"
+                placeholder="Ex: ChatGPT, Claude, Foto da minha prova"
                 value={formData.source}
                 onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 className="bg-input border-input min-h-11"
@@ -170,7 +242,7 @@ export default function Memories() {
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">Conteúdo *</label>
             <Textarea
-              placeholder="Cole a conversa completa ou texto de referência aqui..."
+              placeholder="Cole a conversa completa, texto de referência, ou descreva a atividade..."
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               className="bg-input border-input min-h-40 sm:min-h-64"
@@ -180,11 +252,77 @@ export default function Memories() {
             </p>
           </div>
 
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block flex items-center gap-2">
+              <ImagePlus className="w-4 h-4" />
+              Fotos de atividades <span className="text-muted-foreground">(opcional, até 20)</span>
+            </label>
+            <p className="text-xs text-muted-foreground mb-2 break-words">
+              Envie fotos de atividades que você já respondeu — à mão ou digitadas.
+              A IA olha as imagens junto com o texto pra imitar sua letra, formato
+              e jeito de responder.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleAddImages(e.target.files)}
+            />
+            <div className="flex flex-wrap gap-2">
+              {formData.imageUrls.map((url, idx) => (
+                <div
+                  key={url + idx}
+                  className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-muted group"
+                >
+                  <img
+                    src={url}
+                    alt={`Anexo ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    aria-label={`Remover imagem ${idx + 1}`}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-red-500/90 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {formData.imageUrls.length < 20 && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="w-20 h-20 rounded-md border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Adicionar imagens"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-5 h-5" />
+                  )}
+                </button>
+              )}
+            </div>
+            {formData.imageUrls.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {formData.imageUrls.length} de 20 imagens.
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setIsOpen(false)} className="w-full sm:w-auto min-h-11">
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto min-h-11">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || uploading}
+              className="w-full sm:w-auto min-h-11"
+            >
               {isSaving ? "Salvando..." : isEditing ? "Salvar Alterações" : "Salvar Memória"}
             </Button>
           </div>
@@ -202,7 +340,7 @@ export default function Memories() {
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground break-words">Memórias</h1>
-            <p className="text-sm text-muted-foreground break-words">Importe conversas para personalizar sua IA</p>
+            <p className="text-sm text-muted-foreground break-words">Textos e imagens pra IA aprender seu jeito</p>
           </div>
         </div>
         {memories && memories.length > 0 && newButton}
@@ -220,6 +358,9 @@ export default function Memories() {
               rawContent.length > 150
                 ? rawContent.substring(0, 150).trim() + "…"
                 : rawContent;
+            const images: string[] = Array.isArray(memory.imageUrls)
+              ? memory.imageUrls.map(String)
+              : [];
             return (
               <Card
                 key={memory.id}
@@ -234,6 +375,12 @@ export default function Memories() {
                           {memory.source}
                         </Badge>
                       )}
+                      {images.length > 0 && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <ImagePlus className="w-3 h-3" />
+                          {images.length}
+                        </Badge>
+                      )}
                     </div>
                     {memory.category && (
                       <p className="text-sm text-muted-foreground mb-2 break-words">
@@ -241,6 +388,27 @@ export default function Memories() {
                       </p>
                     )}
                     <p className="text-sm text-foreground/80 line-clamp-2 break-words">{preview}</p>
+                    {images.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {images.slice(0, 4).map((url, i) => (
+                          <a
+                            key={url + i}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-14 h-14 rounded border border-border overflow-hidden bg-muted hover:opacity-80 transition-opacity"
+                            aria-label={`Ver imagem ${i + 1}`}
+                          >
+                            <img src={url} alt="" className="w-full h-full object-cover" />
+                          </a>
+                        ))}
+                        {images.length > 4 && (
+                          <div className="w-14 h-14 rounded border border-border bg-muted flex items-center justify-center text-xs text-muted-foreground">
+                            +{images.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground mt-2">
                       Criada em {formatDate(memory.createdAt)}
                     </p>
@@ -275,7 +443,8 @@ export default function Memories() {
             <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
             <p className="text-muted-foreground mb-4">Nenhuma memória adicionada ainda</p>
             <p className="text-sm text-muted-foreground mb-6 break-words">
-              Importe conversas de outros AIs (ChatGPT, Claude, Gemini) para personalizar sua IA
+              Cole conversas de outras IAs OU envie fotos de atividades que você já fez —
+              a IA aprende seu jeito.
             </p>
             {newButton}
           </Card>
@@ -308,9 +477,9 @@ export default function Memories() {
       <Card className="bg-blue-500/10 border-blue-500/30 p-4">
         <h3 className="font-semibold text-blue-300 mb-2">Como usar Memórias</h3>
         <ul className="text-sm text-blue-200 space-y-1 break-words">
-          <li>• Copie conversas completas de ChatGPT, Claude, Gemini ou outros AIs</li>
-          <li>• Cole aqui para que sua IA aprenda seu estilo de comunicação</li>
-          <li>• Adicione exemplos de redações, respostas ou conversas que você gostou</li>
+          <li>• Cole conversas de ChatGPT, Claude, Gemini ou redações que você gostou</li>
+          <li>• <strong>Envie fotos de atividades já respondidas</strong> (à mão ou digitadas) — a IA imita seu jeito</li>
+          <li>• A IA usa texto + imagens juntos pra completar tarefas no seu estilo</li>
           <li>• Quanto mais memórias, mais personalizada será sua IA</li>
         </ul>
       </Card>
