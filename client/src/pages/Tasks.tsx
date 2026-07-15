@@ -243,8 +243,8 @@ export default function Tasks() {
             }
           : undefined,
       });
-    } catch (error) {
-      toast.error("Erro ao deletar tarefa");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao deletar tarefa");
     }
   };
 
