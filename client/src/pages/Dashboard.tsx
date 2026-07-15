@@ -25,6 +25,7 @@ import { computeStreak } from "@shared/computeStreak";
 import { computeTaskStats } from "@shared/taskStats";
 import { computeStudyStats } from "@shared/studyStats";
 import { getUpcomingTasks } from "@shared/upcomingTasks";
+import { isDueSoon } from "@shared/taskUrgency";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -268,8 +269,9 @@ export default function Dashboard() {
           ) : (
             <ul className="space-y-2">
               {upcoming.map((t) => {
-                const overdueOrSoon =
-                  new Date(t.dueDate!).getTime() < Date.now() + 24 * 60 * 60 * 1000;
+                // Prazo em ≤24h → vermelho; senão, cinza. Mesma regra usada
+                // na página Tarefas (@shared/taskUrgency).
+                const dueSoon = isDueSoon(t as any);
                 return (
                   <li key={t.id}>
                     <button
@@ -285,7 +287,7 @@ export default function Dashboard() {
                       )}
                     </div>
                     <Badge
-                      variant={overdueOrSoon ? "destructive" : "secondary"}
+                      variant={dueSoon ? "destructive" : "secondary"}
                       className="text-xs whitespace-nowrap"
                     >
                       {new Date(t.dueDate!).toLocaleDateString("pt-BR")}
