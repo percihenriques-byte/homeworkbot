@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Mail, MessageSquare, Settings as SettingsIcon, BookOpen, Send, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/contexts/ThemeContext";
+import { classifyFeedUrl } from "@shared/toddleFeedUrl";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("integracao");
@@ -102,6 +103,22 @@ export default function Settings() {
       (!integrationData.gmailUser && integrationData.gmailAppPassword)
     ) {
       return "Configure tanto o Email do Gmail quanto a Senha de App";
+    }
+    // Se colou um link do Toddle, precisa ser um URL válido — evita salvar
+    // lixo que só falha depois no cron.
+    if (integrationData.toddleApiKey.trim()) {
+      const feed = classifyFeedUrl(integrationData.toddleApiKey);
+      if (!feed.ok) {
+        return `Link do calendário inválido: ${feed.message}`;
+      }
+    }
+    // Auto-completar exige Gmail configurado — senão o toggle liga mas nada
+    // acontece na prática.
+    if (
+      integrationData.toddleEnabled &&
+      (!integrationData.gmailUser || !integrationData.gmailAppPassword)
+    ) {
+      return "Para 'Fazer as tarefas e me enviar por e-mail', configure Gmail + Senha de App abaixo.";
     }
     return null;
   };
@@ -279,7 +296,28 @@ export default function Settings() {
                       }
                       placeholder="https://... (link de assinatura do calendário do Toddle)"
                       className="bg-input border-input text-foreground mt-1"
+                      aria-invalid={
+                        integrationData.toddleApiKey.trim().length > 0 &&
+                        !classifyFeedUrl(integrationData.toddleApiKey).ok
+                      }
                     />
+                    {(() => {
+                      const raw = integrationData.toddleApiKey;
+                      if (!raw.trim()) return null;
+                      const r = classifyFeedUrl(raw);
+                      if (r.ok) {
+                        return (
+                          <p className="text-xs text-green-400 mt-1">
+                            ✓ Link válido — o app vai buscar tarefas por aqui.
+                          </p>
+                        );
+                      }
+                      return (
+                        <p className="text-xs text-red-400 mt-1 break-words" role="alert">
+                          {r.message}
+                        </p>
+                      );
+                    })()}
                     <p className="text-xs text-muted-foreground mt-2 break-words">
                       Cole aqui o link de assinatura do calendário do Toddle (ou Google/Outlook). Com ele,
                       o app busca suas tarefas <strong>automaticamente</strong>, sem você precisar fazer nada.
