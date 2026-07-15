@@ -48,13 +48,26 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
-    return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
+    // localStorage pode dar throw em Safari privado / storage bloqueado.
+    // parseInt sem checar NaN pode vazar largura zerada e sumir com o
+    // sidebar em janela quebrada.
+    try {
+      const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+      if (!saved) return DEFAULT_WIDTH;
+      const parsed = parseInt(saved, 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_WIDTH;
+    } catch {
+      return DEFAULT_WIDTH;
+    }
   });
   const { loading, user } = useAuth();
 
   useEffect(() => {
-    localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    try {
+      localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
+    } catch {
+      // storage bloqueado — não persiste, mas UI já refletiu
+    }
   }, [sidebarWidth]);
 
   if (loading) {

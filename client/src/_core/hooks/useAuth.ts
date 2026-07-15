@@ -48,10 +48,6 @@ export function useAuth(options?: UseAuthOptions) {
   }, [logoutMutation, utils]);
 
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,
@@ -65,6 +61,21 @@ export function useAuth(options?: UseAuthOptions) {
     logoutMutation.error,
     logoutMutation.isPending,
   ]);
+
+  // Cache leve do usuário atual em localStorage — usado por integrações
+  // Manus/Preview pra headers alternativos. Isolado num useEffect (era
+  // side-effect dentro de useMemo, que é anti-pattern React) e com
+  // try/catch (Safari privado / storage bloqueado).
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(meQuery.data)
+      );
+    } catch {
+      // storage indisponível — ignora
+    }
+  }, [meQuery.data]);
 
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
