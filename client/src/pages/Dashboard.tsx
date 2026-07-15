@@ -95,7 +95,16 @@ export default function Dashboard() {
             variant="outline"
             size="sm"
             className="min-h-11 w-full sm:w-auto"
-            onClick={() => navigate("/tarefas")}
+            onClick={() => {
+              // Preseleciona filtro em Tarefas (localStorage é o que Tasks.tsx
+              // já lê no init do state — assim abre já filtrado em Atrasadas).
+              try {
+                localStorage.setItem("tasks-filter", "atrasadas");
+              } catch {
+                // storage cheio/desativado — segue a viagem, sem preseleção
+              }
+              navigate("/tarefas");
+            }}
           >
             Ver atrasadas
           </Button>

@@ -83,4 +83,37 @@ describe("filterTasks", () => {
     filterTasks(TASKS, "pendentes", "prova");
     expect(TASKS).toEqual(copy);
   });
+
+  describe("filter='atrasadas' (usa taskUrgency)", () => {
+    const NOW = new Date(2026, 6, 15, 12, 0, 0);
+    const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3600 * 1000);
+    const hoursAhead = (h: number) => new Date(NOW.getTime() + h * 3600 * 1000);
+    const OVERDUE = [
+      { id: 10, status: "pendente", title: "Atrasada 1", dueDate: hoursAgo(2) },
+      { id: 11, status: "pendente", title: "Atrasada 2", dueDate: hoursAgo(24) },
+      { id: 12, status: "pendente", title: "Futura", dueDate: hoursAhead(1) },
+      { id: 13, status: "concluída", title: "Feita", dueDate: hoursAgo(1) },
+      { id: 14, status: "pendente", title: "Sem prazo" },
+    ];
+
+    it("só tarefas com prazo no passado E não concluídas", () => {
+      const r = filterTasks(OVERDUE, "atrasadas", "", NOW);
+      expect(r.map((t) => t.id).sort()).toEqual([10, 11]);
+    });
+
+    it("concluída com prazo passado NÃO conta", () => {
+      const r = filterTasks(OVERDUE, "atrasadas", "", NOW);
+      expect(r.some((t) => t.id === 13)).toBe(false);
+    });
+
+    it("sem prazo NÃO conta", () => {
+      const r = filterTasks(OVERDUE, "atrasadas", "", NOW);
+      expect(r.some((t) => t.id === 14)).toBe(false);
+    });
+
+    it("combina com busca", () => {
+      const r = filterTasks(OVERDUE, "atrasadas", "atrasada 1", NOW);
+      expect(r.map((t) => t.id)).toEqual([10]);
+    });
+  });
 });

@@ -147,10 +147,13 @@ export default function Tasks() {
   const [editingId, setEditingId] = useState<number | null>(null);
   // Filtro persiste entre visitas via localStorage — usuario que trabalha
   // sempre em "concluidas" nao precisa mudar toda vez que abre a pagina.
-  const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas">(() => {
+  const [filter, setFilter] = useState<"todas" | "pendentes" | "concluidas" | "atrasadas">(() => {
     if (typeof window === "undefined") return "pendentes";
     const saved = localStorage.getItem("tasks-filter");
-    return saved === "todas" || saved === "pendentes" || saved === "concluidas"
+    return saved === "todas" ||
+      saved === "pendentes" ||
+      saved === "concluidas" ||
+      saved === "atrasadas"
       ? saved
       : "pendentes";
   });
@@ -383,6 +386,7 @@ export default function Tasks() {
 
   const totalDone = allTasks.filter((t) => normalize(t.status) === "concluida").length;
   const totalPending = allTasks.length - totalDone;
+  const totalOverdue = allTasks.filter((t) => isOverdue(t as any)).length;
 
   return (
     <div className="space-y-6">
@@ -471,6 +475,15 @@ export default function Tasks() {
             >
               Pendentes ({totalPending})
             </button>
+            {totalOverdue > 0 && (
+              <button
+                onClick={() => setFilter("atrasadas")}
+                className={`px-3 py-2 rounded text-sm min-h-9 transition-colors ${filter === "atrasadas" ? "bg-background shadow-sm font-medium text-red-500" : "text-red-500/80 hover:text-red-500"}`}
+                aria-label={`Filtrar por ${totalOverdue} tarefa(s) atrasada(s)`}
+              >
+                Atrasadas ({totalOverdue})
+              </button>
+            )}
             <button
               onClick={() => setFilter("concluidas")}
               className={`px-3 py-2 rounded text-sm min-h-9 transition-colors ${filter === "concluidas" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
