@@ -23,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { Streamdown } from "streamdown";
 import { normalize } from "@shared/normalize";
 import { buildWhatsappReminderUrl } from "@shared/whatsappUrl";
+import { sortTasks } from "@shared/sortTasks";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -372,24 +373,9 @@ export default function Tasks() {
     );
   }
 
-  // Ordena por prioridade. Usa `?? 3` (nao `|| 3`) pra que "alta"=0 nao vire 3.
-  // normalize() vem de @shared/normalize — evita variacoes ("Média"/"media"/etc)
-  // furarem o mapa.
-  const priorityRank: Record<string, number> = { alta: 0, media: 1, baixa: 2 };
-  const allTasks = [...(tasks || [])].sort((a, b) => {
-    // Concluídas por último
-    const aDone = normalize(a.status) === "concluida" ? 1 : 0;
-    const bDone = normalize(b.status) === "concluida" ? 1 : 0;
-    if (aDone !== bDone) return aDone - bDone;
-    // Depois por prioridade
-    const aRank = priorityRank[normalize(a.priority)] ?? 3;
-    const bRank = priorityRank[normalize(b.priority)] ?? 3;
-    if (aRank !== bRank) return aRank - bRank;
-    // Depois por data mais próxima
-    const aDue = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
-    const bDue = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
-    return aDue - bDue;
-  });
+  // Ordem canônica: não-concluídas → prioridade → data mais próxima.
+  // Lógica extraída em @shared/sortTasks (testável, sem mutação).
+  const allTasks = sortTasks(tasks || []);
 
   const searchLower = search.trim().toLowerCase();
   const sortedTasks = allTasks.filter((t) => {
