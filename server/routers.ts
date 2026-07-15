@@ -519,7 +519,12 @@ export const appRouter = router({
             },
             {
               role: "user",
-              content: `Crie flashcards sobre: ${input.content}`,
+              // Passa a disciplina (quando o usuário forneceu) pro LLM
+              // adaptar tom/vocabulário — flashcards de "Matemática 9º ano"
+              // devem soar diferente de "Filosofia ensino médio".
+              content: input.subject
+                ? `Disciplina: ${input.subject}\n\nCrie flashcards sobre este conteúdo:\n${input.content}`
+                : `Crie flashcards sobre: ${input.content}`,
             },
           ],
         });
@@ -571,7 +576,9 @@ export const appRouter = router({
             },
             {
               role: "user",
-              content: `Crie um quiz com ${input.questionCount} perguntas sobre: ${input.content}`,
+              content: input.subject
+                ? `Disciplina: ${input.subject}\n\nCrie um quiz com ${input.questionCount} perguntas sobre este conteúdo:\n${input.content}`
+                : `Crie um quiz com ${input.questionCount} perguntas sobre: ${input.content}`,
             },
           ],
         });
@@ -618,7 +625,9 @@ export const appRouter = router({
             },
             {
               role: "user",
-              content: `Crie um guia de estudo sobre: ${input.content}`,
+              content: input.subject
+                ? `Disciplina: ${input.subject}\n\nCrie um guia de estudo sobre este conteúdo:\n${input.content}`
+                : `Crie um guia de estudo sobre: ${input.content}`,
             },
           ],
         });
