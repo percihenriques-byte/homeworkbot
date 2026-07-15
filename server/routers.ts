@@ -19,6 +19,7 @@ import { buildChatSystemPrompt } from "./chatPrompt";
 import { llmText } from "./utils/llmText";
 import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
 import { extractMarkdownTitle } from "@shared/markdownTitle";
+import { taskDedupKey } from "./utils/taskDedupKey";
 
 export const appRouter = router({
   system: systemRouter,
@@ -930,15 +931,11 @@ export const appRouter = router({
           });
         }
         const existing = await db.getTasksByUserId(ctx.user.id);
-        const keyOf = (title: string, due: Date | null) =>
-          `${title.trim().toLowerCase()}|${due ? new Date(due).toISOString().slice(0, 10) : ""}`;
-        const seen = new Set(
-          existing.map((t) => keyOf(t.title, t.dueDate ? new Date(t.dueDate) : null))
-        );
+        const seen = new Set(existing.map((t) => taskDedupKey(t.title, t.dueDate)));
         let imported = 0;
         let skipped = 0;
         for (const ev of events) {
-          const key = keyOf(ev.title, ev.dueDate);
+          const key = taskDedupKey(ev.title, ev.dueDate);
           if (seen.has(key)) {
             skipped++;
             continue;
