@@ -37,15 +37,20 @@ function getForgeConfig() {
   return { forgeUrl: forgeUrl.replace(/\/+$/, ""), forgeKey };
 }
 
-function normalizeKey(relKey: string): string {
+export function normalizeKey(relKey: string): string {
   return relKey.replace(/^\/+/, "");
+}
+
+// Exportado pra testes; o consumidor de produção usa o wrapper abaixo.
+export function appendHashSuffixWith(relKey: string, hash: string): string {
+  const lastDot = relKey.lastIndexOf(".");
+  if (lastDot === -1) return `${relKey}_${hash}`;
+  return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
 }
 
 function appendHashSuffix(relKey: string): string {
   const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  const lastDot = relKey.lastIndexOf(".");
-  if (lastDot === -1) return `${relKey}_${hash}`;
-  return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
+  return appendHashSuffixWith(relKey, hash);
 }
 
 export async function storagePut(
