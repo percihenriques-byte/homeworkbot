@@ -658,11 +658,15 @@ export default function Tasks() {
                 ? toddleConnected
                   ? "Nenhuma tarefa sincronizada do Toddle ainda. Verifique suas atribuições lá."
                   : "Nenhuma tarefa criada ainda. Crie uma para começar!"
-                : searchLower
+                : search.trim()
                   ? `Nenhuma tarefa encontrada para "${search}". Ajuste a busca ou o filtro.`
-                  : filter === "pendentes"
-                    ? "Tudo em dia! Nenhuma tarefa pendente."
-                    : "Nenhuma tarefa concluída ainda."}
+                  : filter === "atrasadas"
+                    ? "Nada atrasado. Tudo em dia! 🎉"
+                    : filter === "pendentes"
+                      ? "Tudo em dia! Nenhuma tarefa pendente."
+                      : filter === "concluidas"
+                        ? "Nenhuma tarefa concluída ainda."
+                        : "Nenhuma tarefa nesta visão."}
             </p>
           </Card>
         ) : (
