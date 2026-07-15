@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Wand2, BookOpen, HelpCircle, Trash2, ChevronLeft, ChevronRight, RotateCcw, CheckCircle2, XCircle, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
+import { computeQuizScore } from "@shared/quizScore";
 
 type Tool = "flashcards" | "quiz" | "guide";
 
@@ -673,18 +674,13 @@ function QuizGame({ questions, onClose }: QuizGameProps) {
   const currentAnswer = answers[index];
   const isCorrect = currentAnswer !== undefined && currentAnswer === q?.correctAnswer;
 
-  const score = useMemo(
-    () =>
-      questions.reduce(
-        (acc, question, i) => (answers[i] === question.correctAnswer ? acc + 1 : acc),
-        0
-      ),
+  // Score + badge delegados pra util testável (@shared/quizScore).
+  const { score, pct, badge } = useMemo(
+    () => computeQuizScore(questions as any, answers),
     [answers, questions]
   );
 
   if (finished) {
-    const pct = total > 0 ? Math.round((score / total) * 100) : 0;
-    const badge = pct >= 80 ? "🏆" : pct >= 60 ? "👍" : "📚";
     return (
       <div className="space-y-4">
         <div className="text-center py-4 border-b border-border">
