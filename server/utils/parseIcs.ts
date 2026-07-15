@@ -47,15 +47,31 @@ export function parseIcsDate(value: string): Date | null {
   const dateOnly = /^(\d{4})(\d{2})(\d{2})$/.exec(v);
   if (dateOnly) {
     const [, y, mo, d] = dateOnly;
-    return new Date(Number(y), Number(mo) - 1, Number(d));
+    const Y = Number(y), M = Number(mo), D = Number(d);
+    // Guard contra JS normalizando data inválida em silêncio.
+    // "20261332" (mês 13, dia 32) viraria Feb/2027 sem esse check.
+    if (M < 1 || M > 12 || D < 1 || D > 31) return null;
+    const dt = new Date(Y, M - 1, D);
+    if (dt.getFullYear() !== Y || dt.getMonth() !== M - 1 || dt.getDate() !== D) {
+      return null; // rolou overflow silencioso (ex: 30/fev vira 2/mar)
+    }
+    return dt;
   }
   const dateTime = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z)?$/.exec(v);
   if (dateTime) {
     const [, y, mo, d, h, mi, s, z] = dateTime;
+    const Y = Number(y), M = Number(mo), D = Number(d);
+    const H = Number(h), Mi = Number(mi), S = Number(s);
+    if (M < 1 || M > 12 || D < 1 || D > 31) return null;
+    if (H > 23 || Mi > 59 || S > 59) return null;
     if (z) {
-      return new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s)));
+      const dt = new Date(Date.UTC(Y, M - 1, D, H, Mi, S));
+      if (dt.getUTCFullYear() !== Y || dt.getUTCMonth() !== M - 1 || dt.getUTCDate() !== D) return null;
+      return dt;
     }
-    return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+    const dt = new Date(Y, M - 1, D, H, Mi, S);
+    if (dt.getFullYear() !== Y || dt.getMonth() !== M - 1 || dt.getDate() !== D) return null;
+    return dt;
   }
   return null;
 }

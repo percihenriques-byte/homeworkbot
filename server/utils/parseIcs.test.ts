@@ -24,6 +24,34 @@ describe("parseIcsDate", () => {
     expect(parseIcsDate("nao-e-data")).toBeNull();
     expect(parseIcsDate("")).toBeNull();
   });
+
+  it("rejeita mês inválido (13) em vez de normalizar silenciosamente", () => {
+    // JS aceita new Date(2026, 12, 15) e devolve Jan/2027. Nosso parser
+    // rejeita — melhor mostrar erro que salvar tarefa com prazo errado.
+    expect(parseIcsDate("20261315")).toBeNull();
+    expect(parseIcsDate("20260015")).toBeNull(); // mês 00
+  });
+
+  it("rejeita dia inválido (32) e 30/fev", () => {
+    expect(parseIcsDate("20260132")).toBeNull(); // 32 fev
+    expect(parseIcsDate("20260230")).toBeNull(); // 30 de fevereiro
+    expect(parseIcsDate("20260431")).toBeNull(); // 31 de abril (só tem 30)
+  });
+
+  it("rejeita hora inválida (>23) em datetime", () => {
+    expect(parseIcsDate("20260715T240000")).toBeNull();
+    expect(parseIcsDate("20260715T236000Z")).toBeNull(); // minuto 60
+  });
+
+  it("aceita 29/fev em ano bissexto", () => {
+    // 2028 é bissexto (divisível por 4 e não por 100).
+    expect(parseIcsDate("20280229")).not.toBeNull();
+  });
+
+  it("rejeita 29/fev em ano não-bissexto", () => {
+    // 2026 não é bissexto.
+    expect(parseIcsDate("20260229")).toBeNull();
+  });
 });
 
 describe("parseIcs", () => {
