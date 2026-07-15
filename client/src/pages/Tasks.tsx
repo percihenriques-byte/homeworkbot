@@ -99,8 +99,8 @@ export default function Tasks() {
 
   // Gera um link wa.me (click-to-chat) com o lembrete pronto. Sem API:
   // apenas abre o WhatsApp do próprio usuário com a mensagem preenchida —
-  // o envio é feito por ele. Se não houver número configurado, o WhatsApp
-  // deixa escolher o contato.
+  // o envio é feito por ele. Se não houver número configurado, abre a
+  // versão SEM número (wa.me/?text=...) que deixa o usuário escolher contato.
   const handleWhatsappReminder = (task: any) => {
     const phone = String(integrationSettings?.whatsappPhoneNumber || "").replace(/\D/g, "");
     const due = task.dueDate ? new Date(task.dueDate).toLocaleDateString("pt-BR") : "sem prazo";
@@ -108,7 +108,11 @@ export default function Tasks() {
       `📚 Lembrete de tarefa: ${task.title}` +
       (task.subject ? ` (${task.subject})` : "") +
       `\nPrazo: ${due}`;
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    // Se não tem phone válido, cai no formato genérico (WhatsApp mostra
+    // seletor de contato). Se tem, vai direto pra conversa com o número.
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+      : `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
