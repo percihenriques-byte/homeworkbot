@@ -283,8 +283,15 @@ export default function Settings() {
                     <p className="text-xs text-muted-foreground mt-2 break-words">
                       Cole aqui o link de assinatura do calendário do Toddle (ou Google/Outlook). Com ele,
                       o app busca suas tarefas <strong>automaticamente</strong>, sem você precisar fazer nada.
-                      No Toddle: procure "Assinar calendário" / "Subscribe" / "iCal" e copie o link.
                     </p>
+                    <details className="mt-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer hover:text-foreground">Como pego esse link? (passo a passo)</summary>
+                      <ul className="mt-2 space-y-1 pl-4 list-disc break-words">
+                        <li><strong>Toddle:</strong> Menu → Calendar → "Subscribe" / "Assinar" → copie a URL <code className="text-[10px]">webcal://</code> ou <code className="text-[10px]">https://</code>.</li>
+                        <li><strong>Google Calendar:</strong> Configurações do calendário → "Integrar calendário" → "URL secreta no formato iCal".</li>
+                        <li><strong>Outlook:</strong> Configurações → Calendário → Compartilhar → Publicar calendário → copie o link ICS.</li>
+                      </ul>
+                    </details>
 
                     <div className="mt-3 flex items-start justify-between gap-3 rounded-md bg-background/60 p-3">
                       <div className="min-w-0">
