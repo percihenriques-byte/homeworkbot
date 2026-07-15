@@ -16,6 +16,7 @@ import {
   Task, Conversation, Flashcard, StudySchedule, UserMemory, IntegrationSettings
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { wantsDbSsl } from './utils/wantsDbSsl';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -24,14 +25,10 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       // SSL: bancos gerenciados (TiDB Cloud, PlanetScale, Aiven...) exigem TLS.
-      // O mysql2 não liga SSL só pelo "?sslaccept=strict" da URL, então
-      // detectamos e ativamos. Liga se DB_SSL=true, se a URL pedir ssl, ou se
-      // o host for de um provedor gerenciado conhecido.
+      // O mysql2 não liga SSL só pelo "?sslaccept=strict" da URL — a
+      // detecção fica em utils/wantsDbSsl (testável).
       const url = process.env.DATABASE_URL;
-      const wantsSsl =
-        process.env.DB_SSL === "true" ||
-        /sslaccept|ssl-mode|ssl=true/i.test(url) ||
-        /tidbcloud\.com|psdb\.cloud|planetscale|aivencloud\.com|render\.com/i.test(url);
+      const wantsSsl = wantsDbSsl(url, process.env.DB_SSL);
 
       const connection: Record<string, unknown> = {
         uri: url,
