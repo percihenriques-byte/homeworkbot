@@ -21,25 +21,40 @@ const secret = () => process.env.JWT_SECRET || "dev-secret-troque-em-producao";
 
 export const simpleAuthEnabled = () => password().length > 0;
 
-function sign(value: string): string {
-  return crypto.createHmac("sha256", secret()).update(value).digest("base64url");
+// Exportados pra testar sem express: são puros (secret injetado). O wrapper
+// interno usa o secret do env pra manter a API interna curta.
+export function signWithSecret(value: string, secretValue: string): string {
+  return crypto.createHmac("sha256", secretValue).update(value).digest("base64url");
 }
 
 // Token = "<payloadB64>.<assinatura>". Payload simples e fixo (um usuário só).
-function makeToken(): string {
-  const payload = Buffer.from(JSON.stringify({ openId: LOCAL_OPEN_ID, t: "simple" })).toString("base64url");
-  return `${payload}.${sign(payload)}`;
+export function makeTokenWithSecret(secretValue: string): string {
+  const payload = Buffer.from(
+    JSON.stringify({ openId: LOCAL_OPEN_ID, t: "simple" })
+  ).toString("base64url");
+  return `${payload}.${signWithSecret(payload, secretValue)}`;
 }
 
-function verifyToken(token: string | undefined): boolean {
+export function verifyTokenWithSecret(
+  token: string | undefined | null,
+  secretValue: string
+): boolean {
   if (!token) return false;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return false;
   // Comparação em tempo constante pra não vazar via timing.
-  const expected = sign(payload);
+  const expected = signWithSecret(payload, secretValue);
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function makeToken(): string {
+  return makeTokenWithSecret(secret());
+}
+
+function verifyToken(token: string | undefined): boolean {
+  return verifyTokenWithSecret(token, secret());
 }
 
 function readCookie(req: Request): string | undefined {
