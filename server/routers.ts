@@ -781,6 +781,15 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.fileData, "base64");
+        // Buffer.from com base64 é lenient: se veio lixo, gera 0 bytes
+        // sem erro. Sem esse guard, gravaríamos arquivo vazio no S3 e o
+        // LLM depois receberia URL apontando pra nada.
+        if (buffer.length === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Arquivo vazio ou base64 inválido — não subi nada.",
+          });
+        }
         // Limite server-side (10MB). Frontend ja checa em Chat.tsx, mas
         // outros clientes (mobile, terceiros usando tRPC direto) podem
         // ignorar e mandar arquivo enorme — memoria, custo de S3, etc.
