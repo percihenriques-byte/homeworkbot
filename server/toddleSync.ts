@@ -68,6 +68,21 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
     if (text.length > 5_000_000) {
       throw new Error(`o feed retornou ${(text.length / 1024 / 1024).toFixed(1)}MB — grande demais para ser um .ics válido.`);
     }
+    // Sanity: feeds .ics começam com BEGIN:VCALENDAR (RFC 5545). Se veio
+    // outro conteúdo (HTML de página de login, JSON de erro), erra cedo
+    // com mensagem clara — antes ficava silencioso ("0 tarefas importadas").
+    const head = text.slice(0, 500).trimStart();
+    if (head && !/BEGIN:VCALENDAR/i.test(head)) {
+      // Detecta HTML pelo <!doctype ou <html — mensagem mais específica.
+      if (/^<!doctype|^<html/i.test(head)) {
+        throw new Error(
+          "o link não é um .ics — parece uma página web. Copie a URL de assinatura do calendário (webcal:// ou terminada em .ics)."
+        );
+      }
+      throw new Error(
+        "o link não parece um calendário válido (.ics). Confira se copiou o link de assinatura correto."
+      );
+    }
   } catch (err: any) {
     // AbortError = timeout, tem código específico.
     if (err?.name === "AbortError") {

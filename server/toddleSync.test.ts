@@ -95,4 +95,17 @@ describe("syncToddleForUser", () => {
     vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404, text: async () => "" })));
     await expect(syncToddleForUser(1)).rejects.toThrow(/acessar o calend/i);
   });
+
+  it("resposta HTML (link errado) → erro explícito 'não é um .ics'", async () => {
+    // Usuário cola URL da página de login em vez do link de assinatura.
+    (db.getIntegrationSettings as any).mockResolvedValue({ toddleApiKey: "https://cal.exemplo.com/login" });
+    mockFetchOk("<!doctype html><html><body>Login</body></html>");
+    await expect(syncToddleForUser(1)).rejects.toThrow(/página web/i);
+  });
+
+  it("resposta plain-text não-.ics → erro 'não parece um calendário'", async () => {
+    (db.getIntegrationSettings as any).mockResolvedValue({ toddleApiKey: "https://cal.exemplo.com/x" });
+    mockFetchOk("Some random text response");
+    await expect(syncToddleForUser(1)).rejects.toThrow(/calendário válido/i);
+  });
 });
