@@ -827,7 +827,22 @@ export const appRouter = router({
         source: z.string().max(100).optional(),
         // Fotos de atividades respondidas — a IA usa como referência
         // visual em multimodal. Cap em 20 URLs pra evitar prompt gigante.
-        imageUrls: z.array(z.string().min(1).max(2000)).max(20).optional(),
+        // Só aceita URLs internas — arquivos que passaram por upload.file.
+        // Sem esse guard, o usuário poderia colar http://qualquer-coisa.com
+        // e o LLM baixaria (leak via loguing/tracking do provider).
+        imageUrls: z
+          .array(
+            z
+              .string()
+              .min(1)
+              .max(2000)
+              .regex(
+                /^\/(manus-storage|uploads)\//,
+                "URL de imagem inválida — só arquivos enviados pelo próprio app."
+              )
+          )
+          .max(20)
+          .optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return await db.createUserMemory({
@@ -842,7 +857,22 @@ export const appRouter = router({
         category: z.string().max(255).optional(),
         content: z.string().min(1).max(200000).optional(),
         source: z.string().max(100).optional(),
-        imageUrls: z.array(z.string().min(1).max(2000)).max(20).optional(),
+        // Só aceita URLs internas — arquivos que passaram por upload.file.
+        // Sem esse guard, o usuário poderia colar http://qualquer-coisa.com
+        // e o LLM baixaria (leak via loguing/tracking do provider).
+        imageUrls: z
+          .array(
+            z
+              .string()
+              .min(1)
+              .max(2000)
+              .regex(
+                /^\/(manus-storage|uploads)\//,
+                "URL de imagem inválida — só arquivos enviados pelo próprio app."
+              )
+          )
+          .max(20)
+          .optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...updates } = input;
