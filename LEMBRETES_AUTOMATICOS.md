@@ -17,7 +17,22 @@ Requisitos por usuário: ter **Gmail + Senha de App** salvos em Configurações.
 
 O cron só pode ser criado **depois que o app estiver publicado (Deploy)** — o servidor de cron precisa da URL de produção. E deve ser criado **uma única vez** (é um cron do projeto inteiro, não por usuário).
 
-### Passo a passo
+### Opção A — Render / Vercel / qualquer host com cron externo
+
+Se você não está mais no Manus, use qualquer serviço de cron gratuito
+(cron-job.org, GitHub Actions, EasyCron etc). O endpoint que ele precisa
+bater é sempre o mesmo:
+
+```
+POST https://<sua-url>/api/scheduled/send-reminders
+```
+
+Frequência sugerida: a cada 15 minutos. O endpoint autentica via SDK
+Manus se disponível; sem Manus, você pode passar um header
+`x-cron-secret` e adicionar a validação no server/reminders.ts (não
+implementado ainda — hoje o endpoint recusa sem autenticação Manus).
+
+### Opção B — Manus Heartbeat (quando o app roda no Manus)
 
 1. **Publique o app** (Deploy) normalmente pelo painel do Manus.
 2. Abra um terminal do Manus (sandbox) e rode **uma vez**:
