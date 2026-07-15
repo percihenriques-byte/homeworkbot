@@ -132,17 +132,26 @@ export default function Memories() {
       return;
     }
     try {
-      const payload = {
+      const basePayload = {
         title: formData.title,
         category: formData.category || undefined,
         content: formData.content,
         source: formData.source || undefined,
-        imageUrls: formData.imageUrls.length > 0 ? formData.imageUrls : undefined,
       };
       if (isEditing) {
-        await updateMutation.mutateAsync({ id: editingId!, ...payload });
+        // Sempre manda imageUrls no update — se o usuário removeu todas,
+        // precisa persistir array vazio (undefined faria drizzle manter
+        // as antigas).
+        await updateMutation.mutateAsync({
+          id: editingId!,
+          ...basePayload,
+          imageUrls: formData.imageUrls,
+        });
       } else {
-        await createMutation.mutateAsync(payload);
+        await createMutation.mutateAsync({
+          ...basePayload,
+          imageUrls: formData.imageUrls.length > 0 ? formData.imageUrls : undefined,
+        });
       }
       setFormData(emptyForm);
       setEditingId(null);
