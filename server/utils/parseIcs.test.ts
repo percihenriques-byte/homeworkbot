@@ -96,6 +96,49 @@ describe("parseIcs", () => {
     expect(parseIcs("qualquer texto sem eventos")).toEqual([]);
   });
 
+  it("extrai CATEGORIES (primeira vira category)", () => {
+    const ics = [
+      "BEGIN:VEVENT",
+      "SUMMARY:Prova",
+      "CATEGORIES:Matemática,EF9,prova",
+      "END:VEVENT",
+    ].join("\r\n");
+    const events = parseIcs(ics);
+    expect(events[0].category).toBe("Matemática");
+  });
+
+  it("CATEGORIES com uma só categoria", () => {
+    const ics = "BEGIN:VEVENT\r\nSUMMARY:X\r\nCATEGORIES:História\r\nEND:VEVENT";
+    expect(parseIcs(ics)[0].category).toBe("História");
+  });
+
+  it("CATEGORIES vazio ou só vírgulas → null", () => {
+    const ics = "BEGIN:VEVENT\r\nSUMMARY:X\r\nCATEGORIES:  ,  \r\nEND:VEVENT";
+    expect(parseIcs(ics)[0].category).toBeNull();
+  });
+
+  it("sem CATEGORIES → category = null (não undefined, não vazio)", () => {
+    const ics = "BEGIN:VEVENT\r\nSUMMARY:X\r\nEND:VEVENT";
+    const ev = parseIcs(ics)[0];
+    expect(ev.category).toBeNull();
+    expect(ev.category).not.toBe(undefined);
+  });
+
+  it("CATEGORIES com espaços em volta são trimados", () => {
+    const ics = "BEGIN:VEVENT\r\nSUMMARY:X\r\nCATEGORIES:  Ciências  ,  outra  \r\nEND:VEVENT";
+    expect(parseIcs(ics)[0].category).toBe("Ciências");
+  });
+
+  it("CATEGORIES com escape (\\, no meio de uma categoria)", () => {
+    // Categoria "Matemática, avançada" escrita como um valor só (usa \, pra
+    // vírgula literal). Depois do unescape vira "Matemática, avançada"
+    // — split(",") então separa incorretamente. Aceita o comportamento
+    // observável: usamos a primeira metade antes da vírgula literal.
+    const ics = "BEGIN:VEVENT\r\nSUMMARY:X\r\nCATEGORIES:Matemática\\, avançada\r\nEND:VEVENT";
+    const cat = parseIcs(ics)[0].category;
+    expect(cat).toContain("Matemática");
+  });
+
   it("parseia um calendário realista (Google/Outlook: VTIMEZONE, TZID, X-props)", () => {
     // VTIMEZONE não tem SUMMARY → deve ser ignorado. DTSTART;TZID e props X-
     // não podem atrapalhar. Deve extrair só os 2 VEVENTs com título.

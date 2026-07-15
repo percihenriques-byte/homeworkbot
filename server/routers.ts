@@ -958,6 +958,7 @@ export const appRouter = router({
             title: ev.title.slice(0, 255),
             description: ev.description ? ev.description.slice(0, 5000) : undefined,
             dueDate: ev.dueDate ?? undefined,
+            subject: ev.category ? ev.category.slice(0, 255) : undefined,
           });
           if (created) await syncTaskReminder(ctx.user.id, created as any);
           imported++;

@@ -107,6 +107,8 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
       title: ev.title.slice(0, 255),
       description: ev.description ? ev.description.slice(0, 5000) : undefined,
       dueDate: ev.dueDate ?? undefined,
+      // Matéria vinda de CATEGORIES do .ics (Toddle marca disciplina).
+      subject: ev.category ? ev.category.slice(0, 255) : undefined,
     });
     if (created) await syncTaskReminder(userId, created as any);
     imported++;

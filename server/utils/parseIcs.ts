@@ -6,6 +6,9 @@ export type ParsedIcsEvent = {
   title: string;
   dueDate: Date | null;
   description: string | null;
+  /** Primeira categoria (CATEGORIES) — usada como "matéria" da tarefa quando
+   * o calendário do Toddle marca disciplina (ex: "Matemática, EF9"). */
+  category: string | null;
 };
 
 // Desfaz o "line folding" do iCalendar: linhas de continuação começam com
@@ -70,7 +73,7 @@ function splitProperty(line: string): { name: string; value: string } | null {
   return { name, value };
 }
 
-const RELEVANT = ["SUMMARY", "DTSTART", "DTEND", "DUE", "DESCRIPTION"];
+const RELEVANT = ["SUMMARY", "DTSTART", "DTEND", "DUE", "DESCRIPTION", "CATEGORIES"];
 
 // Extrai os eventos (VEVENT) e afazeres (VTODO) de um arquivo .ics.
 // Cada bloco vira uma tarefa: título = SUMMARY, prazo = DUE > DTSTART > DTEND.
@@ -93,8 +96,20 @@ export function parseIcs(raw: string): ParsedIcsEvent[] {
         const rawDate = cur.DUE || cur.DTSTART || cur.DTEND || "";
         const dueDate = rawDate ? parseIcsDate(rawDate) : null;
         const description = cur.DESCRIPTION ? unescapeText(cur.DESCRIPTION).trim() : "";
+        // CATEGORIES pode ter várias, separadas por vírgula. Pegamos a
+        // primeira como "matéria" — geralmente a mais específica (ex:
+        // "Matemática, EF9, prova" → "Matemática"). Vazias/whitespace
+        // são ignoradas.
+        let category: string | null = null;
+        if (cur.CATEGORIES) {
+          const first = unescapeText(cur.CATEGORIES)
+            .split(",")
+            .map((s) => s.trim())
+            .find((s) => s.length > 0);
+          category = first ?? null;
+        }
         if (title) {
-          events.push({ title, dueDate, description: description || null });
+          events.push({ title, dueDate, description: description || null, category });
         }
       }
       cur = null;
