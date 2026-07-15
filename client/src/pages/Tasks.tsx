@@ -25,6 +25,7 @@ import { normalize } from "@shared/normalize";
 import { buildWhatsappReminderUrl } from "@shared/whatsappUrl";
 import { sortTasks } from "@shared/sortTasks";
 import { isDueSoon, isOverdue } from "@shared/taskUrgency";
+import { filterTasks } from "@shared/filterTasks";
 import { toast } from "sonner";
 
 export default function Tasks() {
@@ -378,17 +379,7 @@ export default function Tasks() {
   // Lógica extraída em @shared/sortTasks (testável, sem mutação).
   const allTasks = sortTasks(tasks || []);
 
-  const searchLower = search.trim().toLowerCase();
-  const sortedTasks = allTasks.filter((t) => {
-    const done = normalize(t.status) === "concluida";
-    if (filter === "pendentes" && done) return false;
-    if (filter === "concluidas" && !done) return false;
-    if (searchLower) {
-      const hay = `${t.title ?? ""} ${t.description ?? ""} ${t.subject ?? ""}`.toLowerCase();
-      if (!hay.includes(searchLower)) return false;
-    }
-    return true;
-  });
+  const sortedTasks = filterTasks(allTasks, filter, search);
 
   const totalDone = allTasks.filter((t) => normalize(t.status) === "concluida").length;
   const totalPending = allTasks.length - totalDone;
