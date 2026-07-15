@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -558,8 +558,6 @@ function StudyDeck({ cards, index, onIndexChange }: StudyDeckProps) {
   const safeIndex = Math.max(0, Math.min(index, cards.length - 1));
   const card = cards[safeIndex];
 
-  if (!card) return null;
-
   const toggleAnswer = () => {
     const next = !showAnswer;
     setShowAnswer(next);
@@ -584,6 +582,32 @@ function StudyDeck({ cards, index, onIndexChange }: StudyDeckProps) {
     onIndexChange(0);
   };
 
+  // Atalhos de teclado: ← anterior, → próximo, Espaço/Enter vira o card.
+  // Só ativa quando não digitando em input/textarea (typing em busca não
+  // deve mudar de card acidentalmente).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        toggleAnswer();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeIndex, showAnswer, card?.id]);
+
+  if (!card) return null;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -606,6 +630,7 @@ function StudyDeck({ cards, index, onIndexChange }: StudyDeckProps) {
         </p>
         <p className="text-xs text-muted-foreground mt-4">
           {showAnswer ? "Toque para ver a pergunta" : "Toque para ver a resposta"}
+          <span className="hidden sm:inline"> · atalhos: ← → espaço</span>
         </p>
       </button>
 
