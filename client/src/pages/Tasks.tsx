@@ -205,8 +205,8 @@ export default function Tasks() {
       setEditingId(null);
       setIsOpen(false);
       refetch();
-    } catch (error) {
-      toast.error("Erro ao salvar tarefa");
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao salvar tarefa");
     }
   };
 
