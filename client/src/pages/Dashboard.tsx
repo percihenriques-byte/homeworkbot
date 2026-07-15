@@ -18,6 +18,7 @@ import {
   Settings as SettingsIcon,
   ChevronRight,
   Sparkles,
+  Flame,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { normalize } from "@shared/normalize";
@@ -54,6 +55,40 @@ export default function Dashboard() {
     const pct = all.length > 0 ? Math.round((done / all.length) * 100) : 0;
     return { total: all.length, done, pending, overdue, dueSoon, pct };
   }, [tasks]);
+
+  // Streak: dias consecutivos até hoje com qualquer atividade (task criada/
+  // concluida, mensagem no chat, memoria adicionada, flashcard revisado).
+  // Local-only: usa dados ja carregados no dashboard, sem query extra.
+  const streak = useMemo(() => {
+    const dates = new Set<string>();
+    const add = (d: Date | string | null | undefined) => {
+      if (!d) return;
+      const iso = new Date(d).toISOString().slice(0, 10);
+      dates.add(iso);
+    };
+    for (const t of tasks ?? []) {
+      add(t.createdAt);
+      add(t.completedAt);
+    }
+    for (const c of conversations ?? []) add(c.updatedAt);
+    for (const m of memories ?? []) add(m.createdAt);
+    for (const f of flashcards ?? []) add((f as any).lastReviewedAt);
+
+    // Conta dias consecutivos indo pra tras a partir de hoje.
+    let count = 0;
+    const cursor = new Date();
+    // Zera horas no fuso local pra bater com o formato ISO date.
+    cursor.setHours(0, 0, 0, 0);
+    for (let i = 0; i < 365; i++) {
+      const iso = new Date(cursor.getTime() - cursor.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 10);
+      if (!dates.has(iso)) break;
+      count++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return count;
+  }, [tasks, conversations, memories, flashcards]);
 
   const upcoming = useMemo(() => {
     const now = Date.now();
@@ -259,11 +294,19 @@ export default function Dashboard() {
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Seu estudo
           </h2>
-          {studyStats.activeDays > 0 && (
-            <span className="text-sm font-medium text-amber-500">
-              🔥 Ativo em {studyStats.activeDays} de 7 dias
-            </span>
-          )}
+          <div className="flex items-center gap-3 flex-wrap">
+            {streak > 0 && (
+              <span className="text-sm font-medium text-orange-500 flex items-center gap-1" title="Dias consecutivos com atividade">
+                <Flame className="w-4 h-4" />
+                {streak} dia{streak === 1 ? "" : "s"} seguido{streak === 1 ? "" : "s"}
+              </span>
+            )}
+            {studyStats.activeDays > 0 && (
+              <span className="text-sm font-medium text-amber-500">
+                🔥 Ativo em {studyStats.activeDays} de 7 dias
+              </span>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon={BookOpen} label="Flashcards" value={studyStats.flashcards} color="cyan" />
