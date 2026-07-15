@@ -31,7 +31,10 @@ export function extractJson<T = unknown>(raw: unknown): T | null {
     } catch {}
   }
 
-  // Tentativa 3: primeiro { ... } ou [ ... ] balanceado
+  // Tentativa 3: primeiro { ... } ou [ ... ] balanceado.
+  // Contador de profundidade que IGNORA chaves dentro de strings JSON.
+  // Sem isso, `{"note": "closing }"}` seria cortado no `}` de dentro da
+  // string e falharia (JSON.parse do prefixo inválido → null).
   const firstArray = str.indexOf("[");
   const firstObject = str.indexOf("{");
   const start =
@@ -44,9 +47,26 @@ export function extractJson<T = unknown>(raw: unknown): T | null {
     const open = str[start];
     const close = open === "[" ? "]" : "}";
     let depth = 0;
+    let inString = false;
+    let escaped = false;
     for (let i = start; i < str.length; i++) {
-      if (str[i] === open) depth++;
-      else if (str[i] === close) {
+      const ch = str[i];
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === "\\") {
+          escaped = true;
+        } else if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch === '"') {
+        inString = true;
+        continue;
+      }
+      if (ch === open) depth++;
+      else if (ch === close) {
         depth--;
         if (depth === 0) {
           try {

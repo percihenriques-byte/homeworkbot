@@ -55,6 +55,34 @@ describe("extractJson", () => {
       const raw = '[1] {"a": 2}';
       expect(extractJson(raw)).toEqual([1]);
     });
+
+    it("ignora chave/colchete DENTRO de string JSON (bug fix)", () => {
+      // Antes do fix: o `}` dentro de "closing }" derrubava o contador
+      // pra zero cedo demais, o JSON.parse do prefixo inválido dava throw,
+      // e a função retornava null.
+      const raw = 'Resposta: {"note": "closing brace }"} — fim.';
+      expect(extractJson(raw)).toEqual({ note: "closing brace }" });
+    });
+
+    it("ignora colchetes dentro de strings", () => {
+      const raw = 'Aqui: {"expr": "arr[0] + arr[1]"} depois.';
+      expect(extractJson(raw)).toEqual({ expr: "arr[0] + arr[1]" });
+    });
+
+    it("aspas escapadas dentro de string não terminam a string", () => {
+      const raw = 'A: {"quote": "ele disse \\"oi\\" e saiu"} B.';
+      expect(extractJson(raw)).toEqual({ quote: 'ele disse "oi" e saiu' });
+    });
+
+    it("string com múltiplas chaves internas", () => {
+      const raw = '{"a": "{{{}}}"}';
+      expect(extractJson(raw)).toEqual({ a: "{{{}}}" });
+    });
+
+    it("array com string contendo colchete de fechamento", () => {
+      const raw = 'Prosa [{"txt": "]"}, {"txt": "["}] fim';
+      expect(extractJson(raw)).toEqual([{ txt: "]" }, { txt: "[" }]);
+    });
   });
 
   describe("casos de falha e edge", () => {
