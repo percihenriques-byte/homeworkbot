@@ -16,6 +16,7 @@ import { parseUserDate } from "./utils/parseUserDate";
 import { llmText } from "./utils/llmText";
 import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
 import { extractMarkdownTitle } from "@shared/markdownTitle";
+import { isPendingTask } from "@shared/isPendingTask";
 
 export type ToolResult = { ok: boolean; summary: string; data?: any };
 
@@ -260,7 +261,7 @@ export async function executeAgentTool(
 
       case "gerar_cronograma": {
         const tasks = await db.getTasksByUserId(userId);
-        const pending = tasks.filter((t) => !t.completedAt && t.status !== "concluída");
+        const pending = tasks.filter(isPendingTask);
         if (pending.length === 0) {
           return { ok: false, summary: "Não há tarefas pendentes pra montar um cronograma. Crie tarefas primeiro." };
         }
@@ -299,7 +300,7 @@ export async function executeAgentTool(
 
       case "listar_tarefas": {
         const tasks = await db.getTasksByUserId(userId);
-        const pending = tasks.filter((t) => t.status !== "concluída");
+        const pending = tasks.filter(isPendingTask);
         const lines = pending
           .slice(0, 30)
           .map((t) => `- ${t.title}${t.subject ? ` (${t.subject})` : ""}${t.dueDate ? `, prazo ${new Date(t.dueDate).toLocaleDateString("pt-BR")}` : ""}`)
@@ -315,7 +316,7 @@ export async function executeAgentTool(
         const alvo = normalize(String(args.titulo || ""));
         if (!alvo) return { ok: false, summary: "Não marquei: não informou qual tarefa." };
         const tasks = await db.getTasksByUserId(userId);
-        const pendentes = tasks.filter((t) => t.status !== "concluída");
+        const pendentes = tasks.filter(isPendingTask);
         // Casa por título: primeiro tenta match exato normalizado, senão
         // por conteúdo (a tarefa cujo título contém o texto, ou vice-versa).
         const match =

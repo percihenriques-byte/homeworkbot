@@ -20,6 +20,7 @@ import { llmText } from "./utils/llmText";
 import { validateFlashcards, validateQuizQuestions } from "./utils/validateAiOutput";
 import { extractMarkdownTitle } from "@shared/markdownTitle";
 import { taskDedupKey } from "./utils/taskDedupKey";
+import { isPendingTask } from "@shared/isPendingTask";
 
 export const appRouter = router({
   system: systemRouter,
@@ -663,9 +664,7 @@ export const appRouter = router({
       // Dados antigos (antes do fix "server toca completedAt") podem ter
       // status concluída mas completedAt null. Checar ambos evita
       // reincluir na proxima geração.
-      const pendingTasks = tasks.filter(
-        (t) => !t.completedAt && t.status !== "concluída"
-      );
+      const pendingTasks = tasks.filter(isPendingTask);
       if (pendingTasks.length === 0) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
