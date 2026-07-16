@@ -32,7 +32,9 @@ export type {
 // Lidos na hora da chamada (não no carregamento) — assim o env pode mudar e dá pra testar.
 const geminiKey = () => process.env.GEMINI_API_KEY ?? "";
 const geminiModel = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+// Endpoint da API. Override via GEMINI_BASE permite apontar pra um proxy
+// compatível ou um mock (testes). Padrão: API oficial do Google.
+const geminiBase = () => process.env.GEMINI_BASE || "https://generativelanguage.googleapis.com/v1beta/models";
 
 // Converte um JSON Schema (nosso formato OpenAI) pro Schema do Gemini, que
 // exige os tipos em MAIÚSCULO (STRING/OBJECT/...). Exportado pra testes.
@@ -133,7 +135,7 @@ async function invokeGemini(params: forge.InvokeParams): Promise<forge.InvokeRes
     }
   }
 
-  const url = `${GEMINI_BASE}/${geminiModel()}:generateContent?key=${geminiKey()}`;
+  const url = `${geminiBase()}/${geminiModel()}:generateContent?key=${geminiKey()}`;
   const resp = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
