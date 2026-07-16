@@ -10,10 +10,13 @@ export type FlashcardCandidate = {
   difficulty?: unknown;
 };
 
+export type Difficulty = "fácil" | "médio" | "difícil";
+const DIFFICULTIES: readonly Difficulty[] = ["fácil", "médio", "difícil"];
+
 export type ValidFlashcard = {
   question: string;
   answer: string;
-  difficulty?: string;
+  difficulty?: Difficulty;
 };
 
 export function validateFlashcards(
@@ -32,8 +35,11 @@ export function validateFlashcards(
         question: c.question,
         answer: c.answer,
       };
-      if (typeof c.difficulty === "string" && c.difficulty.trim()) {
-        card.difficulty = c.difficulty;
+      if (
+        typeof c.difficulty === "string" &&
+        (DIFFICULTIES as readonly string[]).includes(c.difficulty)
+      ) {
+        card.difficulty = c.difficulty as Difficulty;
       }
       out.push(card);
     }

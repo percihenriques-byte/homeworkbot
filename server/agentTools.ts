@@ -200,7 +200,7 @@ export async function executeAgentTool(
             question: card.question,
             answer: card.answer,
             subject: args.subject ? String(args.subject) : undefined,
-            difficulty: ["fácil", "médio", "difícil"].includes(card.difficulty) ? card.difficulty : undefined,
+            difficulty: card.difficulty,
           });
         }
         return { ok: true, summary: `${valid.length} flashcards gerados${args.subject ? ` de ${args.subject}` : ""}.`, data: { count: valid.length } };

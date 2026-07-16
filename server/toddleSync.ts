@@ -4,7 +4,9 @@
 // busca sozinho, periodicamente, via o cron da plataforma. Sem interação
 // repetida e sem depender de login/scraping frágil do Toddle.
 
-import type { Express, Request, Response } from "express";
+// Response é renomeado pra ExpressResponse pra não colidir com o Response
+// global do fetch (usado no syncToddleForUser abaixo).
+import type { Express, Request, Response as ExpressResponse } from "express";
 import { sdk } from "./_core/sdk";
 import * as db from "./db";
 import { parseIcs } from "./utils/parseIcs";
@@ -149,7 +151,7 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
 // Rota do cron: sincroniza TODOS os usuários que têm link configurado.
 // Roda periodicamente sem nenhuma interação. Idempotente (dedup por tarefa).
 export function registerToddleSyncRoute(app: Express) {
-  app.post("/api/scheduled/sync-toddle", async (req: Request, res: Response) => {
+  app.post("/api/scheduled/sync-toddle", async (req: Request, res: ExpressResponse) => {
     try {
       const user = await sdk.authenticateRequest(req);
       if (!user.isCron || !user.taskUid) {

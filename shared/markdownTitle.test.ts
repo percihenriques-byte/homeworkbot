@@ -50,7 +50,8 @@ describe("extractMarkdownTitle", () => {
   });
 
   it("respeita max customizado", () => {
-    expect(extractMarkdownTitle("## Título muito longo aqui", 5)).toBe("Título…");
+    // max=5 → slice(0,5) de "Título muito longo aqui" = "Títul" + "…".
+    expect(extractMarkdownTitle("## Título muito longo aqui", 5)).toBe("Títul…");
   });
 
   it("não corta se cabe em max", () => {

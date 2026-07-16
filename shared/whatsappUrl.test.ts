@@ -7,8 +7,8 @@ describe("buildWhatsappReminderUrl", () => {
       phone: "+55 11 99999-1234",
       title: "Prova",
     });
-    // Só dígitos no path
-    expect(url).toMatch(/^https:\/\/wa\.me\/551199991234\?text=/);
+    // Só dígitos no path — "+55 11 99999-1234" → 13 dígitos.
+    expect(url).toMatch(/^https:\/\/wa\.me\/5511999991234\?text=/);
   });
 
   it("formato sem número quando phone vazio/null/undefined", () => {

@@ -55,7 +55,8 @@ describe("buildChatSystemPrompt", () => {
         title: "Ensaio Independência",
         subject: "História",
         type: "redação",
-        dueDate: new Date("2026-07-20T00:00:00Z"),
+        // Noon UTC pra não flutuar de fuso: em qualquer TZ [-12..+11] cai em 20/07.
+        dueDate: new Date("2026-07-20T12:00:00Z"),
         description: "1000 palavras",
         notes: "usar fontes primárias",
       },

@@ -116,9 +116,17 @@ describe("getUpcomingTasks", () => {
       { status: "pendente", dueDate: daysAhead(3) },
       { status: "pendente", dueDate: daysAhead(1) },
     ];
-    const copy = JSON.parse(JSON.stringify(input));
+    // JSON round-trip converteria Date → string, atrapalhando toEqual. Clone
+    // manual mantém o tipo Date pra comparar de verdade.
+    const originalRefs = input.map((t) => ({ ...t }));
+    const originalDates = input.map((t) => t.dueDate?.getTime());
     getUpcomingTasks(input, { now: NOW });
-    expect(input).toEqual(copy);
+    // Ordem e conteúdo do array não mudaram.
+    expect(input.length).toBe(originalRefs.length);
+    input.forEach((t, i) => {
+      expect(t.status).toBe(originalRefs[i].status);
+      expect(t.dueDate?.getTime()).toBe(originalDates[i]);
+    });
   });
 
   it("dueDate == now → incluído (borda inferior fechada)", () => {
