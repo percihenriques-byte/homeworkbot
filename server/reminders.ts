@@ -4,8 +4,8 @@
 // periodicamente. Ver references/periodic-updates.md.
 
 import type { Express, Request, Response } from "express";
-import { sdk } from "./_core/sdk";
 import * as db from "./db";
+import { isAuthorizedCron } from "./utils/isAuthorizedCron";
 import { sendReminderEmail } from "./email";
 import { formatDate } from "@shared/formatDate";
 import { normalize } from "@shared/normalize";
@@ -103,15 +103,14 @@ export async function sendDueReminders(): Promise<DispatchResult> {
   return { sent, failed, skipped };
 }
 
-// Registra a rota de callback do cron. A plataforma (Heartbeat) faz POST
-// aqui periodicamente. Autentica via SDK e exige user.isCron. Ver
-// periodic-updates.md §3 passo 2/3. DEVE ser montada antes do fallthrough
-// do Vite/estático.
+// Registra a rota de callback do cron. Aceita autenticação da plataforma
+// (Manus, se estiver lá) OU header `x-cron-secret` batendo com o env
+// CRON_SECRET (cron externo grátis). Ver LEMBRETES_AUTOMATICOS.md. DEVE ser
+// montada antes do fallthrough do Vite/estático.
 export function registerReminderRoutes(app: Express) {
   app.post("/api/scheduled/send-reminders", async (req: Request, res: Response) => {
     try {
-      const user = await sdk.authenticateRequest(req);
-      if (!user.isCron || !user.taskUid) {
+      if (!(await isAuthorizedCron(req))) {
         return res.status(403).json({ error: "cron-only" });
       }
       const result = await sendDueReminders();

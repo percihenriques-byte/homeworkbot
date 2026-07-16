@@ -7,13 +7,13 @@
 // Response é renomeado pra ExpressResponse pra não colidir com o Response
 // global do fetch (usado no syncToddleForUser abaixo).
 import type { Express, Request, Response as ExpressResponse } from "express";
-import { sdk } from "./_core/sdk";
 import * as db from "./db";
 import { parseIcs } from "./utils/parseIcs";
 import { syncTaskReminder } from "./reminders";
 import { completeAndEmailTask } from "./autoComplete";
 import { isSafeFeedUrl } from "./utils/safeUrl";
 import { taskDedupKey } from "./utils/taskDedupKey";
+import { isAuthorizedCron } from "./utils/isAuthorizedCron";
 
 export { isSafeFeedUrl };
 
@@ -153,8 +153,7 @@ export async function syncToddleForUser(userId: number): Promise<SyncResult> {
 export function registerToddleSyncRoute(app: Express) {
   app.post("/api/scheduled/sync-toddle", async (req: Request, res: ExpressResponse) => {
     try {
-      const user = await sdk.authenticateRequest(req);
-      if (!user.isCron || !user.taskUid) {
+      if (!(await isAuthorizedCron(req))) {
         return res.status(403).json({ error: "cron-only" });
       }
       const users = await db.getUsersWithToddleFeed();

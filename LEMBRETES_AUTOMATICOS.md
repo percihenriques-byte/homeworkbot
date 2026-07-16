@@ -3,60 +3,60 @@
 O envio automático de lembretes **já está todo implementado no código**. Ele usa:
 
 - **Gmail SMTP** (o mesmo que você configura em Configurações → Integrações) para enviar. **Nenhuma API externa paga.**
-- **Cron da própria plataforma Manus** (Heartbeat) para disparar de tempos em tempos.
+- **Cron externo** (cron-job.org, GitHub Actions, EasyCron etc.) para disparar de tempos em tempos.
 
 ## Como funciona (automático, sem você fazer nada no dia a dia)
 
 1. Toda tarefa com **prazo (data de entrega)** agenda sozinha um lembrete para **24h antes** do prazo.
-2. Um cron roda a cada 15 min, vê quais lembretes venceram e **envia o e-mail** para você.
+2. Um cron externo bate no endpoint a cada 15 min, o servidor vê quais lembretes venceram e **envia o e-mail** para você.
 3. Se a tarefa for concluída ou apagada antes, o lembrete é cancelado automaticamente.
 
 Requisitos por usuário: ter **Gmail + Senha de App** salvos em Configurações. Sem isso, não há como enviar (o app não inventa credencial).
 
-## Ativação (UMA vez, depois de publicar o app)
+## Ativação (uma vez, depois do Deploy)
 
-O cron só pode ser criado **depois que o app estiver publicado (Deploy)** — o servidor de cron precisa da URL de produção. E deve ser criado **uma única vez** (é um cron do projeto inteiro, não por usuário).
+O cron só faz sentido **depois que o app estiver publicado** — o serviço de cron precisa da URL pública.
 
-### Opção A — Render / Vercel / qualquer host com cron externo
+### Configurar cron externo (grátis)
 
-Se você não está mais no Manus, use qualquer serviço de cron gratuito
-(cron-job.org, GitHub Actions, EasyCron etc). O endpoint que ele precisa
-bater é sempre o mesmo:
+Use um serviço gratuito de cron. Sugestão: [cron-job.org](https://cron-job.org).
+
+Endpoint a ser chamado:
 
 ```
-POST https://<sua-url>/api/scheduled/send-reminders
+POST https://<seu-app>.onrender.com/api/scheduled/send-reminders
 ```
 
-Frequência sugerida: a cada 15 minutos. O endpoint autentica via SDK
-Manus se disponível; sem Manus, você pode passar um header
-`x-cron-secret` e adicionar a validação no server/reminders.ts (não
-implementado ainda — hoje o endpoint recusa sem autenticação Manus).
+Header de autenticação:
 
-### Opção B — Manus Heartbeat (quando o app roda no Manus)
+```
+x-cron-secret: <valor de CRON_SECRET no .env>
+```
 
-1. **Publique o app** (Deploy) normalmente pelo painel do Manus.
-2. Abra um terminal do Manus (sandbox) e rode **uma vez**:
+Frequência: a cada **15 minutos**.
 
-   ```bash
-   manus-heartbeat create \
-     --name send-reminders \
-     --cron "0 */15 * * * *" \
-     --path /api/scheduled/send-reminders \
-     --description "Envio automatico de lembretes de tarefas por email"
-   ```
+Defina `CRON_SECRET` nas env vars do Render com um texto longo e aleatório. Só chamadas com esse header passam — protege o endpoint de spam.
 
-   - `"0 */15 * * * *"` = a cada 15 minutos (formato de 6 campos: seg min hora dia mês dia-semana, em UTC).
-   - Guarde o `task_uid` que aparecer, caso um dia queira pausar/editar.
+### Alternativa: GitHub Actions
 
-3. Pronto. Para conferir/pausar/ver logs depois:
-   ```bash
-   manus-heartbeat list
-   manus-heartbeat logs --task-uid <uid>
-   manus-heartbeat update --task-uid <uid> --enable=false   # pausar
-   manus-heartbeat update --task-uid <uid> --enable=true    # retomar
-   ```
+Crie `.github/workflows/reminders.yml`:
 
-Você também vê e gerencia esse cron no painel do Manus (execuções, pausar/retomar, "Run Now", Investigate).
+```yaml
+name: send-reminders
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -X POST \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            https://<seu-app>.onrender.com/api/scheduled/send-reminders
+```
+
+Guarde `CRON_SECRET` em Settings → Secrets do GitHub.
 
 ## Onde está o código (pra referência)
 
@@ -74,19 +74,17 @@ O app busca as tarefas do Toddle sozinho, sem você fazer nada — a partir de u
 2. No app: **Configurações → Toddle → "Link do calendário (.ics)"**, cole o link e salve.
 3. (Opcional) Ligue **"Fazer as tarefas e me enviar por e-mail"** — aí cada tarefa nova é feita pela IA no seu estilo e enviada pro seu Gmail. Precisa do Gmail configurado.
 
-### Ativar o cron de sync (uma vez, após o Deploy)
-Assim como os lembretes, o cron só existe depois do Deploy. Rode **uma vez** no terminal Manus:
+### Ativar cron de sync (junto com o de lembretes)
 
-```bash
-manus-heartbeat create \
-  --name sync-toddle \
-  --cron "0 0 */4 * * *" \
-  --path /api/scheduled/sync-toddle \
-  --description "Busca automatica de tarefas do Toddle (feed .ics)"
+Configure um segundo job no seu cron externo:
+
+```
+POST https://<seu-app>.onrender.com/api/scheduled/sync-toddle
+Header: x-cron-secret: <CRON_SECRET>
+Frequência: a cada 4 horas
 ```
 
-- `"0 0 */4 * * *"` = a cada 4 horas. Ajuste se quiser mais/menos frequente.
-- O manual também funciona: botão **"Sincronizar"** na página Tarefas puxa na hora.
+O manual também funciona: botão **"Sincronizar"** na página Tarefas puxa na hora.
 
 ### Como funciona por dentro
 - `server/toddleSync.ts` — busca o link (`isSafeFeedUrl` bloqueia SSRF), parseia com `parseIcs`, deduplica por (título+dia), cria as tarefas e (se ligado) chama `completeAndEmailTask`.
