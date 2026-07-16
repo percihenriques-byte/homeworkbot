@@ -3,6 +3,7 @@ import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 import { resolveSimpleUser } from "../simpleAuth";
 import { resolvePasswordUser } from "../passwordAuth";
+import { resolveDemoUser } from "../demoAuth";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -29,6 +30,10 @@ export async function createContext(
   // Fallback: login por senha única (compat / modo simples).
   if (!user) {
     user = await resolveSimpleUser(opts.req);
+  }
+  // Modo demonstração (DEMO_MODE=true): abre num usuário "Visitante" sem login.
+  if (!user) {
+    user = await resolveDemoUser();
   }
 
   return {
