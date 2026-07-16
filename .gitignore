@@ -118,3 +118,6 @@ client/public/__manus__/version.json
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Runtime do demo local (baixado pelo INICIAR-DEMO) — Node/MariaDB portáteis
+/demo/.runtime/
