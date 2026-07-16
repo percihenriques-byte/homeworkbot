@@ -2,6 +2,7 @@ import type { CreateExpressContextOptions } from "@trpc/server/adapters/express"
 import type { User } from "../../drizzle/schema";
 import { sdk } from "./sdk";
 import { resolveSimpleUser } from "../simpleAuth";
+import { resolvePasswordUser } from "../passwordAuth";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -21,7 +22,11 @@ export async function createContext(
     user = null;
   }
 
-  // Fallback: login simples por senha (quando roda fora do Manus).
+  // Fallback: login multiusuário por e-mail/senha (fora do Manus).
+  if (!user) {
+    user = await resolvePasswordUser(opts.req);
+  }
+  // Fallback: login por senha única (compat / modo simples).
   if (!user) {
     user = await resolveSimpleUser(opts.req);
   }

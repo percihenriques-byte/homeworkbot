@@ -124,9 +124,29 @@ export async function getUserByOpenId(openId: string) {
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
-  
+
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// Cria um usuário de login por e-mail/senha (multiusuário). Retorna a linha.
+export async function createPasswordUser(data: {
+  openId: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.insert(users).values({
+    openId: data.openId,
+    name: data.name,
+    email: data.email,
+    loginMethod: "senha",
+    passwordHash: data.passwordHash,
+  } as any);
+  return await getUserByOpenId(data.openId);
 }
 
 // User Preferences
