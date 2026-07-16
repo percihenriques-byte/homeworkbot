@@ -1,0 +1,21 @@
+# Blueprint do Render — permite deploy 1-clique.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: homeworkbot
+    runtime: docker
+    plan: free
+    healthCheckPath: /
+    envVars:
+      # Segredos gerados automaticamente pelo Render (você não precisa preencher).
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CRON_SECRET
+        generateValue: true
+      # Segredos que você preenche no dashboard depois:
+      - key: APP_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
