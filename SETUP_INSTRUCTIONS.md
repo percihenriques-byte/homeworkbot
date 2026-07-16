@@ -17,13 +17,16 @@ Roda **fora do Manus**: login por senha, IA Gemini (grátis), banco TiDB Cloud (
    pnpm install
    ```
 
-2. **Criar `.env.local`** copiando de `.env.example` e preenchendo:
+2. **Criar `.env`** copiando de `.env.example` e preenchendo:
    ```
-   DATABASE_URL=mysql://usuario:senha@host:4000/homeworkbot?sslaccept=strict
-   APP_PASSWORD=troque-esta-senha
+   DATABASE_URL=mysql://usuario:senha@host:4000/test?sslaccept=strict
    JWT_SECRET=texto-longo-e-aleatorio
    GEMINI_API_KEY=cole-sua-chave-gemini
    ```
+   
+   *Login é por **cadastro multiusuário** (nome + e-mail + senha). Cada pessoa
+   cria a conta pela própria tela. Não precisa `APP_PASSWORD` (só é necessário
+   se você quiser o modo "senha única legada" via `/api/simple-login`).*
 
 3. **Rodar migrações:**
    ```bash
@@ -64,8 +67,9 @@ homeworkbot/
 ## Funcionalidades
 
 ### Autenticação
-- Login por **senha única** (`APP_PASSWORD`) — sem OAuth, sem cadastro
-- Sessão via JWT em cookie
+- **Cadastro multiusuário** por e-mail + senha (scrypt hash) — sem OAuth externo
+- Cada usuário tem sua conta e seus dados isolados
+- Sessão via cookie assinado (HMAC/JWT)
 
 ### Tarefas
 - Criar/editar/deletar

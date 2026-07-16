@@ -1,8 +1,8 @@
 # Como publicar o Homework Assistant de graça (fora do Manus)
 
 O app foi adaptado pra viver **sem o Manus**: a IA agora usa o **Google Gemini (grátis)**,
-o login é por **senha**, e ele roda em qualquer host. São **3 cadastros grátis** (uma vez cada)
-e nenhum cartão de crédito.
+o login é **cadastro por e-mail + senha** (cada pessoa cria a própria conta), e ele roda em
+qualquer host. São **3 cadastros grátis** (uma vez cada) e nenhum cartão de crédito.
 
 Tempo total: ~20–30 minutos.
 
@@ -23,7 +23,8 @@ Tempo total: ~20–30 minutos.
 ## Passo 2 — Banco de dados (TiDB Cloud) — grátis, 5 min
 
 1. Entre em **https://tidbcloud.com** e crie uma conta (pode logar com Google/GitHub).
-2. Crie um **cluster Serverless** (é o grátis). Região: escolha a mais perto (ex: Singapore).
+2. Crie um **cluster Starter** (é o novo nome do Serverless grátis — 25 GiB + 250M leituras/mês
+   sem cartão). Região: escolha a mais perto (ex: Singapore).
 3. Depois de criado, clique em **"Connect"**.
 4. Em "Connect With", escolha **"General"**. Ele mostra os dados de conexão.
 5. Monte a sua **DATABASE_URL** assim (troque pelos valores que aparecem):
@@ -50,19 +51,24 @@ Tempo total: ~20–30 minutos.
    |---|---|
    | `DATABASE_URL` | (a URL do Passo 2) |
    | `GEMINI_API_KEY` | (a chave do Passo 1) |
-   | `APP_PASSWORD` | uma senha que **você inventa** (será a senha de entrar no site) |
    | `JWT_SECRET` | um texto aleatório longo (ex: aperte várias teclas) |
+
+   *Se usar o botão "Deploy to Render" (Blueprint), esses 2 primeiros já vêm
+   marcados como "sync: false" (você preenche no dashboard) e `JWT_SECRET`
+   é gerado sozinho.*
 
 6. Clique **"Create Web Service"**. O Render vai buildar (~5 min).
 7. Quando terminar, ele te dá uma URL tipo **`https://homeworkbot.onrender.com`**. Esse é o seu site!
 
 ---
 
-## Passo 4 — Entrar
+## Passo 4 — Criar conta e entrar
 
-1. Abra a URL do seu site.
-2. Clique **"Entrar"** → digite a **APP_PASSWORD** que você criou no Passo 3.
-3. Pronto. Tarefas, cronograma, flashcards e o **Jarvis** funcionando. 🎉
+1. Abra a URL do seu site → clique **"Entrar"**.
+2. Clique **"Criar conta"** (na tela de login).
+3. Preencha **Nome**, **E-mail** e **Senha** (mínimo 6 caracteres) → **"Criar conta"**.
+4. Você já entra direto no painel. Cada pessoa cria a própria conta — dados isolados.
+5. Pronto. Tarefas, cronograma, flashcards e o **Jarvis** funcionando. 🎉
 
 ---
 

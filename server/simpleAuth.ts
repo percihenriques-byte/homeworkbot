@@ -93,10 +93,15 @@ export function registerSimpleAuthRoutes(app: Express) {
     if (!ok) {
       return res.status(401).json({ error: "Senha incorreta." });
     }
+    // secure baseado no protocolo REAL da requisição (não em NODE_ENV):
+    // HTTPS direto (req.secure) OU atrás de proxy que termina SSL (Render usa
+    // header x-forwarded-proto=https). Localhost http → false, senão o browser
+    // recusa salvar o cookie.
+    const isHttps = req.secure || req.header("x-forwarded-proto") === "https";
     res.cookie(COOKIE, makeToken(), {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       maxAge: YEAR_MS,
       path: "/",
     });

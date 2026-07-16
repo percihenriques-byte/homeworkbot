@@ -6,11 +6,12 @@ Assistente inteligente de tarefas escolares com IA, lembretes por email/WhatsApp
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/percihenriques-byte/homeworkbot)
 
-Clica no botão, faz login com GitHub e o Render lê o `render.yaml` sozinho. Só precisa colar 3 valores no final:
+Clica no botão, faz login com GitHub e o Render lê o `render.yaml` sozinho. Só precisa colar 2 valores no final:
 
-- `APP_PASSWORD` — senha do site (você define)
-- `DATABASE_URL` — string do TiDB Cloud ([tidbcloud.com](https://tidbcloud.com), grátis)
+- `DATABASE_URL` — string do TiDB Cloud Starter ([tidbcloud.com](https://tidbcloud.com), grátis)
 - `GEMINI_API_KEY` — chave da IA ([aistudio.google.com/apikey](https://aistudio.google.com/apikey), grátis)
+
+Cada usuário cria a própria conta (nome + e-mail + senha) na tela de login.
 
 Passo a passo completo em [SETUP_INSTRUCTIONS.md](./SETUP_INSTRUCTIONS.md) e [COMO-PUBLICAR-DE-GRACA.md](./COMO-PUBLICAR-DE-GRACA.md).
 

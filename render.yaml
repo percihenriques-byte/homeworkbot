@@ -13,8 +13,6 @@ services:
       - key: CRON_SECRET
         generateValue: true
       # Segredos que você preenche no dashboard depois:
-      - key: APP_PASSWORD
-        sync: false
       - key: DATABASE_URL
         sync: false
       - key: GEMINI_API_KEY
