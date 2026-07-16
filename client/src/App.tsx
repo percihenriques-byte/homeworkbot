@@ -14,6 +14,7 @@ import StudyTools from "./pages/StudyTools";
 import Schedule from "./pages/Schedule";
 import Settings from "./pages/Settings";
 import Memories from "./pages/Memories";
+import AiCompleted from "./pages/AiCompleted";
 import { useAuth } from "./_core/hooks/useAuth";
 
 // Rotas estaveis (evita remounting em cada re-render do Router).
@@ -29,6 +30,7 @@ const wrap = (Page: React.ComponentType) => () => (
 
 const DashboardRoute = wrap(Dashboard);
 const TasksRoute = wrap(Tasks);
+const AiCompletedRoute = wrap(AiCompleted);
 const ChatRoute = wrap(Chat);
 const StudyToolsRoute = wrap(StudyTools);
 const ScheduleRoute = wrap(Schedule);
@@ -38,6 +40,7 @@ const SettingsRoute = wrap(Settings);
 const PROTECTED_ROUTES: Array<{ path: string; component: React.ComponentType }> = [
   { path: "/painel", component: DashboardRoute },
   { path: "/tarefas", component: TasksRoute },
+  { path: "/feitas", component: AiCompletedRoute },
   { path: "/chat", component: ChatRoute },
   { path: "/ferramentas", component: StudyToolsRoute },
   { path: "/cronograma", component: ScheduleRoute },

@@ -30,6 +30,7 @@ import { Button } from "./ui/button";
 const menuItems = [
   { icon: LayoutDashboard, label: "Painel", path: "/painel" },
   { icon: BookOpen, label: "Minhas Tarefas", path: "/tarefas" },
+  { icon: Sparkles, label: "Feitas pela IA", path: "/feitas" },
   { icon: Sparkles, label: "Jarvis (IA)", path: "/chat" },
   { icon: Zap, label: "Ferramentas de Estudo", path: "/ferramentas" },
   { icon: Calendar, label: "Cronograma", path: "/cronograma" },

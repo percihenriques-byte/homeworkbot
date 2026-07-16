@@ -9,6 +9,7 @@ import { registerReminderRoutes } from "../reminders";
 import { registerToddleSyncRoute } from "../toddleSync";
 import { registerSimpleAuthRoutes } from "../simpleAuth";
 import { registerPasswordAuthRoutes } from "../passwordAuth";
+import { startAutoSync } from "../autoSync";
 import { UPLOAD_DIR } from "../storage";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
@@ -76,6 +77,9 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
+  // Sync automático de calendários (Toddle .ics) a cada 15 min enquanto o
+  // servidor tá vivo — sem depender de cron externo pra caso simples.
+  startAutoSync();
 }
 
 startServer().catch(console.error);
