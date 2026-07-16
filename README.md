@@ -2,6 +2,18 @@
 
 Assistente inteligente de tarefas escolares com IA, lembretes por email/WhatsApp, e personalização contínua.
 
+## 🚀 Deploy grátis (1 clique)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/percihenriques-byte/homeworkbot)
+
+Clica no botão, faz login com GitHub e o Render lê o `render.yaml` sozinho. Só precisa colar 3 valores no final:
+
+- `APP_PASSWORD` — senha do site (você define)
+- `DATABASE_URL` — string do TiDB Cloud ([tidbcloud.com](https://tidbcloud.com), grátis)
+- `GEMINI_API_KEY` — chave da IA ([aistudio.google.com/apikey](https://aistudio.google.com/apikey), grátis)
+
+Passo a passo completo em [SETUP_INSTRUCTIONS.md](./SETUP_INSTRUCTIONS.md) e [COMO-PUBLICAR-DE-GRACA.md](./COMO-PUBLICAR-DE-GRACA.md).
+
 ## Funcionalidades
 
 - **Tarefas automáticas do Toddle** — sincroniza tarefas automaticamente
