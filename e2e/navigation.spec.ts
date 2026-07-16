@@ -6,7 +6,7 @@ test("rota protegida redireciona visitante (não logado) para a landing", async 
   await page.goto("/tarefas");
 
   // Deve cair na landing ("/") com o botão Entrar
-  await expect(page.getByRole("link", { name: "Entrar" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Entrar" }).first()).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
 });
 

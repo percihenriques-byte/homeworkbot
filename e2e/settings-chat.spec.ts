@@ -27,8 +27,8 @@ test.describe("Jarvis (chat)", () => {
     await installTrpcMock(page, { user: authedUser, conversations: [] });
     await page.goto("/chat");
 
+    // "Nova conversa" cria direto (sem dialog intermediário).
     await page.getByRole("button", { name: "Nova conversa" }).first().click();
-    await page.getByRole("button", { name: "Criar" }).click();
 
     await expect(page.getByText(/Jarvis de Estudos/i)).toBeVisible();
     await expect(page.getByText(/gere 8 flashcards do assunto/i)).toBeVisible();
@@ -37,8 +37,8 @@ test.describe("Jarvis (chat)", () => {
   test("enviar mensagem mostra a resposta do assistente", async ({ page }) => {
     await installTrpcMock(page, { user: authedUser, conversations: [] });
     await page.goto("/chat");
+    // "Nova conversa" cria direto (sem dialog intermediário).
     await page.getByRole("button", { name: "Nova conversa" }).first().click();
-    await page.getByRole("button", { name: "Criar" }).click();
 
     await page.getByPlaceholder(/Peça algo ao Jarvis/i).fill("Olá Jarvis");
     await page.getByRole("button", { name: "Enviar mensagem" }).click();

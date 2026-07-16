@@ -17,7 +17,8 @@ test("criar memória pela interface", async ({ page }) => {
 
   await page.getByRole("button", { name: /Adicionar Primeira Memória|Nova Memória/ }).first().click();
   await expect(page.getByRole("dialog")).toBeVisible();
-  await page.getByPlaceholder("Ex: Conversa ChatGPT - Matemática").fill("Minha primeira memória");
+  // Primeiro campo do dialog = título (robusto a mudança de placeholder).
+  await page.getByRole("dialog").getByRole("textbox").first().fill("Minha primeira memória");
   await page.getByPlaceholder(/Cole a conversa completa/).fill("Conteúdo de exemplo da memória para a IA aprender.");
   await page.getByRole("button", { name: "Salvar Memória" }).click();
 
@@ -32,7 +33,7 @@ test("editar memória existente reflete o novo título", async ({ page }) => {
   await page.getByRole("button", { name: "Editar memória" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Editar Memória")).toBeVisible();
-  await page.getByPlaceholder("Ex: Conversa ChatGPT - Matemática").fill("Estilo atualizado");
+  await dialog.getByRole("textbox").first().fill("Estilo atualizado");
   await page.getByRole("button", { name: "Salvar Alterações" }).click();
 
   await expect(page.getByText("Estilo atualizado")).toBeVisible();

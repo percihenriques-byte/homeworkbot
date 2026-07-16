@@ -12,7 +12,7 @@ test("landing renderiza para visitante não logado", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByText("Homework Assistant").first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Entrar" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Entrar" }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Recursos Poderosos" })).toBeVisible();
   await expect(page.getByText(/Começar Agora/)).toBeVisible();
 
